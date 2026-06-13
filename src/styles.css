@@ -1,0 +1,1192 @@
+/* ===================================================
+   🧱 1. 全域與核心排版
+   =================================================== */
+.App {
+  font-family: sans-serif;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px;
+  background-color: #222;
+  color: white;
+  min-height: 100vh;
+}
+
+h1,
+h2,
+h3 {
+  margin: 10px 0;
+}
+
+.bench-container,
+.board-container {
+  margin-bottom: 20px;
+  padding: 15px;
+  background-color: #333;
+  border-radius: 8px;
+  width: 80%;
+  max-width: 800px;
+  position: relative;
+  overflow: visible !important; /* 確保放大時不會被切邊 */
+}
+
+/* 備戰區：橫向排列 */
+.bench-grid {
+  display: flex;
+  gap: 15px;
+  min-height: 60px;
+  padding: 10px;
+  border: 2px dashed #555;
+  border-radius: 4px;
+}
+
+/* ===================================================
+     🐉 2. 核心 5x5 棋盤與自適應動態視角
+     =================================================== */
+.battle-board {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr); /* 完美適應 5 欄 */
+  gap: 4px;
+  width: 100%;
+  max-width: 480px;
+  margin: 0 auto;
+  transform-origin: top center;
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* 平時微縮，騰出操作空間 */
+.board-normal {
+  transform: scale(0.85);
+}
+
+/* 拖曳聚焦：瞬間放大並提升層級 */
+.board-focused {
+  transform: scale(1.15) translateY(10px);
+  box-shadow: 0 20px 35px -5px rgba(0, 0, 0, 0.8);
+  z-index: 9999 !important;
+  position: relative;
+}
+
+/* 棋盤格子基礎樣式 */
+.grid-cell {
+  aspect-ratio: 1 / 1;
+  background: rgba(30, 41, 59, 0.5);
+  border: 1px solid #1e293b;
+  border-radius: 4px;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+/* 拖曳懸停高亮 */
+.grid-cell.drag-over {
+  background: rgba(56, 189, 248, 0.2) !important;
+  border-color: #38bdf8 !important;
+}
+
+.grid-cell.over {
+  background-color: #666;
+}
+
+/* ===================================================
+     🎯 3. 棋子幾何形狀與陣營渲染（徹底修復顏色與破版）
+     =================================================== */
+.unit-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 50px;
+  position: relative;
+}
+
+.unit {
+  width: 44px;
+  height: 44px;
+  cursor: grab;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  font-size: 14px;
+  color: white;
+  user-select: none;
+  position: relative;
+}
+
+.unit:active {
+  cursor: grabbing;
+  transform: scale(1.1);
+}
+
+.unit.dragging {
+  opacity: 0.5;
+}
+
+/* 🎯 基礎陣營顏色（只套用到非三角形物件：圓形、方形、菱形） */
+.unit.shape-circle.color-blue,
+.unit.shape-square.color-blue,
+.unit.shape-diamond.color-blue {
+  background-color: #3b82f6;
+  color: white;
+}
+
+.unit.shape-circle.color-red,
+.unit.shape-square.color-red,
+.unit.shape-diamond.color-red {
+  background-color: #ef4444;
+  color: white;
+}
+
+.unit.shape-circle.color-gold,
+.unit.shape-square.color-gold,
+.unit.shape-diamond.color-gold {
+  background-color: #eab308;
+  color: black;
+}
+
+/* 幾何形狀結構定義 */
+.shape-circle {
+  border-radius: 50%;
+}
+.shape-square {
+  /* 預設方形 */
+}
+
+/* 🏹 上三角 (弓手) 專屬上色邏輯：背景必須保持透明，改用 border-bottom 上色 */
+.shape-triangle-up {
+  background-color: transparent !important;
+  width: 0;
+  height: 0;
+  border-left: 22px solid transparent;
+  border-right: 22px solid transparent;
+}
+.shape-triangle-up.color-blue {
+  border-bottom: 44px solid #3b82f6 !important;
+}
+.shape-triangle-up.color-red {
+  border-bottom: 44px solid #ef4444 !important;
+}
+.shape-triangle-up.color-gold {
+  border-bottom: 44px solid #eab308 !important;
+}
+.shape-triangle-up .unit-label {
+  position: absolute;
+  top: 18px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: max-content;
+}
+
+/* 🔮 下三角 (法師) 專屬上色邏輯：背景必須保持透明，改用 border-top 上色 */
+.shape-triangle-down {
+  background-color: transparent !important;
+  width: 0;
+  height: 0;
+  border-left: 22px solid transparent;
+  border-right: 22px solid transparent;
+}
+.shape-triangle-down.color-blue {
+  border-top: 44px solid #3b82f6 !important;
+}
+.shape-triangle-down.color-red {
+  border-top: 44px solid #ef4444 !important;
+}
+.shape-triangle-down.color-gold {
+  border-top: 44px solid #eab308 !important;
+}
+.shape-triangle-down .unit-label {
+  position: absolute;
+  bottom: 18px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: max-content;
+}
+
+/* ⚡ 菱形 (刺客) */
+.shape-diamond {
+  transform: rotate(45deg) scale(0.8);
+}
+.shape-diamond .unit-label {
+  transform: rotate(-45deg);
+  display: block;
+  width: 100%;
+  text-align: center;
+}
+
+/* 膠囊血條 */
+.unit-status-block {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 5px;
+}
+.hp-bar-container {
+  width: 100%;
+  height: 5px;
+  background-color: #444;
+  border-radius: 10px;
+  overflow: hidden;
+  position: relative;
+}
+.hp-bar {
+  height: 100%;
+  background-color: #22c55e;
+  transition: width 0.1s ease;
+}
+.hp-text-below {
+  font-size: 10px;
+  font-weight: bold;
+  color: #ddd;
+  margin-top: 2px;
+  font-family: monospace;
+}
+
+/* ===================================================
+     🔮 4. 戰鬥實時互動與特效動畫
+     =================================================== */
+.action-wrapper {
+  transition: transform 0.1s ease-in-out;
+}
+.action-wrapper.attacking {
+  transform: translateY(-12px) scale(1.05);
+  z-index: 10;
+}
+.action-wrapper.skill {
+  transform: scale(1.25);
+  filter: brightness(1.6);
+  z-index: 50;
+  transition: transform 0.1s ease-out;
+}
+.action-wrapper.crit-hit {
+  animation: critFlash 0.15s ease-out 2;
+}
+@keyframes critFlash {
+  0% {
+    filter: brightness(2) drop-shadow(0 0 15px #ef4444);
+  }
+  100% {
+    filter: brightness(1);
+  }
+}
+
+/* 棋子轉職金色外光暈 */
+.unit.promoted {
+  border: 3px solid #f59e0b !important;
+  box-shadow: 0 0 12px #f59e0b, inset 0 0 8px rgba(245, 158, 11, 0.6);
+  animation: proPulse 2s infinite ease-in-out;
+}
+@keyframes proPulse {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.03);
+    box-shadow: 0 0 18px #f59e0b;
+  }
+}
+
+/* 格子受擊震動泛紅 */
+.grid-cell.shake {
+  animation: screenShake 0.2s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+  transform: translate3d(0, 0, 0);
+  background-color: #5a1a1a !important;
+}
+@keyframes screenShake {
+  10%,
+  90% {
+    transform: translate3d(-3px, 0, 0);
+  }
+  20%,
+  80% {
+    transform: translate3d(4px, 0, 0);
+  }
+  30%,
+  50%,
+  70% {
+    transform: translate3d(-6px, 0, 0);
+  }
+  40%,
+  60% {
+    transform: translate3d(6px, 0, 0);
+  }
+}
+
+/* ==========================================
+   ✨ 2D 彈道投射物・頂級特效重構版
+   ========================================== */
+/* ==========================================
+   ✨ 2D 彈道投射物・霓虹發光極光版（徹底除髒）
+   ========================================== */
+.projectile {
+  position: absolute;
+  z-index: 99;
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* 🧪 核心魔法：讓投射物與暗色網格產生「螢幕濾色」發光，直接吃掉髒色 */
+  mix-blend-mode: screen;
+}
+
+/* 🏹 1. 閃電流光箭：拔除土黃色，改用純白配高飽和「螢光亮橘」 */
+.proj-arrow {
+  width: 30px; /* 稍微再拉長，讓速度感更明顯 */
+  height: 2px; /* 箭身變極細，防止變成粗長條 */
+  /* 從前端的極光白，過渡到後端的激光橘 */
+  background: linear-gradient(
+    90deg,
+    #ffffff 0%,
+    #ffaa00 40%,
+    rgba(255, 68, 0, 0) 100%
+  );
+  border-radius: 99px;
+  /* 核心發光：用純色外發光取代髒陰影 */
+  filter: drop-shadow(0 0 4px #ff7700) drop-shadow(0 0 8px #ff4400);
+}
+
+/* 🔮 2. 奧術電漿魂火：拔除暗紫色，改用霓虹「螢光炫紫」搭配冷藍心 */
+.proj-fireball {
+  width: 10px;
+  height: 10px;
+  /* 核心發白光，中層強紫色，外層極光藍 */
+  background: radial-gradient(circle, #ffffff 10%, #d846ff 60%, #00d2ff 100%);
+  border-radius: 50%;
+  /* 雙重射線發光濾鏡，確保在暗色棋盤上是「亮」的，而不是「暗」的 */
+  filter: drop-shadow(0 0 6px #bf55ff) drop-shadow(0 0 12px #00ffff);
+  animation: plasmaPulse 0.3s infinite ease-in-out alternate;
+}
+
+/* 🪐 火球隨體流光包裹層 */
+.proj-fireball::after {
+  content: "";
+  position: absolute;
+  width: 140%;
+  height: 140%;
+  border-radius: 50%;
+  background: transparent;
+  border: 1px solid rgba(0, 242, 255, 0.4);
+  box-shadow: 0 0 8px #d846ff;
+  animation: tailRotate 0.2s infinite linear;
+}
+
+/* ==========================================
+     🎬 極光震盪動畫時鐘
+     ========================================== */
+@keyframes plasmaPulse {
+  0% {
+    transform: scale(0.8);
+    filter: drop-shadow(0 0 4px #bf55ff) drop-shadow(0 0 8px #00ffff)
+      brightness(1);
+  }
+  100% {
+    transform: scale(1.2);
+    filter: drop-shadow(0 0 8px #bf55ff) drop-shadow(0 0 16px #00ffff)
+      brightness(1.5);
+  }
+}
+
+@keyframes tailRotate {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+/* 浮動傷害跳字 */
+.floating-text {
+  position: absolute;
+  top: -10px;
+  font-weight: 900;
+  font-size: 15px;
+  font-family: "Impact", sans-serif;
+  z-index: 100;
+  pointer-events: none;
+  text-shadow: 2px 2px 0px #000;
+  animation: floatUpAndFade 1.1s forwards ease-out !important;
+}
+.pop-damage {
+  color: #ef4444;
+}
+.pop-miss {
+  color: #3b82f6;
+  font-size: 13px;
+}
+.pop-block {
+  color: #eab308;
+  font-size: 13px;
+}
+
+@keyframes floatUpAndFade {
+  0% {
+    transform: translateY(15px) scale(0.6);
+    opacity: 0;
+  }
+  15% {
+    transform: translateY(-5px) scale(1.2);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-40px) scale(0.8);
+    opacity: 0;
+  }
+}
+
+/* 魔王紫黑虛空光暈 */
+.unit.final-boss-style {
+  background-color: #000000 !important;
+  color: #a855f7 !important;
+  border: 4px solid #7c3aed !important;
+  box-shadow: 0 0 25px #6d28d9, inset 0 0 15px #4c1d95 !important;
+  animation: bossVoid 1.5s infinite ease-in-out;
+}
+@keyframes bossVoid {
+  0%,
+  100% {
+    transform: scale(1) rotate(0deg);
+    box-shadow: 0 0 20px #6d28d9;
+  }
+  50% {
+    transform: scale(1.05) rotate(2deg);
+    box-shadow: 0 0 35px #a855f7;
+    border-color: #a855f7 !important;
+  }
+}
+
+/* ===================================================
+     🗺️ 5. 其他系統 UI（天賦、地圖、商店、HUD）
+     =================================================== */
+.talent-container {
+  display: flex;
+  gap: 20px;
+  margin-top: 20px;
+  justify-content: center;
+  width: 100%;
+  max-width: 900px;
+}
+.talent-card {
+  background-color: #333;
+  border: 2px solid #555;
+  border-radius: 8px;
+  padding: 20px;
+  width: 220px;
+  cursor: pointer;
+  transition: transform 0.2s, border-color 0.2s;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+.talent-card:hover {
+  transform: translateY(-5px);
+  border-color: #f59e0b;
+}
+.talent-card h3 {
+  color: #f59e0b;
+  margin-top: 0;
+}
+.talent-card p {
+  font-size: 14px;
+  color: #ccc;
+  line-height: 1.4;
+}
+.select-btn {
+  margin-top: 15px;
+  padding: 8px;
+  background-color: #444;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+.talent-card:hover .select-btn {
+  background-color: #f59e0b;
+  color: black;
+  font-weight: bold;
+}
+
+.hardcore-hud {
+  display: flex;
+  gap: 30px;
+  background-color: #111;
+  border: 1px solid #444;
+  padding: 10px 20px;
+  border-radius: 6px;
+  margin-bottom: 20px;
+  font-family: monospace;
+  font-size: 14px;
+}
+.hud-value {
+  font-weight: bold;
+  color: #3b82f6;
+}
+.hud-value.highlight {
+  color: #f59e0b;
+}
+.hud-value.danger {
+  color: #ef4444;
+}
+
+.map-routes {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  width: 100%;
+  max-width: 500px;
+  margin-top: 20px;
+}
+.route-node {
+  background-color: #2a2a2a;
+  border: 2px solid #444;
+  padding: 15px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: transform 0.2s, border-color 0.2s;
+}
+.route-node:hover {
+  transform: scale(1.02);
+}
+.route-node.enemy:hover {
+  border-color: #ef4444;
+  background-color: #351a1a;
+}
+.route-node.bonfire:hover {
+  border-color: #f59e0b;
+  background-color: #352a1a;
+}
+.route-node.purify:hover {
+  border-color: #a855f7;
+  background-color: #251a35;
+}
+.route-node h3 {
+  margin: 0 0 5px 0;
+  color: #fff;
+}
+.route-node p {
+  margin: 0;
+  font-size: 12px;
+  color: #aaa;
+}
+
+.click-confirm {
+  background-color: #222;
+  border: 2px dashed #444;
+  padding: 10px;
+  cursor: pointer;
+  border-radius: 4px;
+  animation: pulse 1.5s infinite;
+}
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 0.8;
+  }
+  50% {
+    opacity: 1;
+    border-color: #fff;
+  }
+}
+
+.game-over-screen {
+  justify-content: center;
+  background-color: #000;
+}
+.danger-text {
+  color: #ef4444;
+  font-size: 40px;
+  text-transform: uppercase;
+}
+.restart-btn {
+  margin-top: 20px;
+  padding: 12px 30px;
+  background: #ef4444;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.pro-choice-box {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+}
+.pro-btn {
+  padding: 5px 10px;
+  background-color: #f59e0b;
+  color: black;
+  border: none;
+  border-radius: 4px;
+  font-weight: bold;
+  cursor: pointer;
+  font-size: 11px;
+}
+.pro-btn:hover {
+  background-color: #fff;
+}
+
+.battle-dialogue-overlay {
+  position: absolute;
+  bottom: 10px;
+  background: rgba(0, 0, 0, 0.85);
+  border: 2px solid #555;
+  padding: 8px 15px;
+  border-radius: 6px;
+  max-width: 80%;
+  text-align: center;
+  z-index: 100;
+  pointer-events: none;
+  font-family: monospace;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+  animation: txtPop 0.2s ease-out;
+}
+@keyframes txtPop {
+  from {
+    transform: scale(0.9);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+.dialogue-speaker {
+  font-weight: bold;
+  color: #f59e0b;
+  margin-right: 8px;
+}
+.dialogue-content {
+  color: #fff;
+  font-size: 13px;
+}
+
+.market-container {
+  margin-top: 15px;
+  background-color: #2a2a2a;
+  border: 1px dashed #555;
+  padding: 12px;
+  border-radius: 6px;
+  width: 100%;
+}
+.market-grid {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  padding-bottom: 5px;
+}
+.market-item-card {
+  background: #222;
+  border: 1px solid #444;
+  padding: 8px;
+  border-radius: 4px;
+  min-width: 130px;
+  text-align: center;
+}
+.market-item-card h5 {
+  margin: 0 0 4px 0;
+  color: #22c55e;
+}
+.market-item-card p {
+  margin: 0 0 6px 0;
+  font-size: 10px;
+  color: #aaa;
+}
+
+/* 🎯 確保開戰按鈕絕對不會被放大的棋盤擋住點擊 */
+button[onClick*="startBattle"],
+.restart-btn {
+  position: relative !important;
+  z-index: 99999 !important; /* 比棋盤的 9999 還要高 */
+  cursor: pointer;
+}
+
+/* 🎯 微調聚焦棋盤，給底部按鈕留下一點點安全空間 */
+.board-focused {
+  transform: scale(1.1) translateY(0px); /* 稍微縮小到 1.1，拿掉下移，避免壓到按鈕 */
+  box-shadow: 0 20px 35px -5px rgba(0, 0, 0, 0.8);
+  z-index: 9991 !important;
+  position: relative;
+}
+/* 🤖 蒸汽機兵專屬機械外框樣式 */
+.unit[label*="機兵"] {
+  border: 2px solid #94a3b8 !important; /* 鋼鐵灰邊框 */
+  box-shadow: 0 0 8px rgba(148, 163, 184, 0.5),
+    inset 0 0 6px rgba(255, 255, 255, 0.2);
+}
+
+/* ===================================================
+   🌟 傳奇特殊職業專屬：神話級外觀特效
+   =================================================== */
+
+/* 1. 🐉 龍騎士：烈焰重甲（深紅底金邊，帶呼吸火光） */
+.unit[label*="龍騎士"] {
+  background: linear-gradient(135deg, #7f1d1d, #451a03) !important;
+  border: 2px solid #f59e0b !important;
+  box-shadow: 0 0 15px #ef4444, inset 0 0 10px #f59e0b !important;
+  animation: dragonPulse 1.5s infinite ease-in-out;
+}
+@keyframes dragonPulse {
+  0%,
+  100% {
+    filter: drop-shadow(0 0 5px #ef4444) brightness(1);
+  }
+  50% {
+    filter: drop-shadow(0 0 20px #f97316) brightness(1.3);
+  }
+}
+
+/* 2. 🥷 忍者：虛空幽影（暗紫黑底，霓虹紫光閃爍） */
+.unit[label*="忍者"] {
+  background: linear-gradient(135deg, #1e1b4b, #030712) !important;
+  border: 2px solid #a855f7 !important;
+  box-shadow: 0 0 12px #c084fc, inset 0 0 8px rgba(168, 85, 247, 0.4) !important;
+  animation: ninjaBlur 2s infinite linear;
+}
+@keyframes ninjaBlur {
+  0%,
+  100% {
+    transform: scale(1);
+    filter: opacity(0.9);
+  }
+  50% {
+    transform: scale(1.02);
+    filter: opacity(1) drop-shadow(0 0 8px #a855f7);
+  }
+}
+
+/* 3. 🌾 浪人：孤狼劍氣（水墨灰黑，冷冽白芒邊框） */
+.unit[label*="浪人"] {
+  background: linear-gradient(135deg, #2d3748, #1a202c) !important;
+  border: 2px solid #e2e8f0 !important;
+  box-shadow: 0 0 15px rgba(255, 255, 255, 0.6), inset 0 0 5px #cbd5e1 !important;
+}
+
+/* 4. 👻 靈魂行者：冥府幽火（青綠色螢光，空靈擴散） */
+.unit[label*="靈魂"] {
+  background: linear-gradient(135deg, #064e3b, #022c22) !important;
+  border: 2px solid #10b981 !important;
+  box-shadow: 0 0 18px #34d399, inset 0 0 12px rgba(16, 185, 129, 0.5) !important;
+}
+
+/* 5. ⛪ 聖職者：神聖金芒（純白金底，天堂十字光暈） */
+.unit[label*="聖職"] {
+  background: linear-gradient(135deg, #fef08a, #fef08a) !important;
+  color: #451a03 !important; /* 改成深色字確保辨識度 */
+  border: 2px solid #eab308 !important;
+  box-shadow: 0 0 20px #fde047, inset 0 0 10px #ffffff !important;
+}
+
+/* 🎯 強制讓所有單位的名字不准換行，完美對齊 CSS 特效選取器 */
+.unit,
+.unit-label,
+.action-wrapper span {
+  white-space: nowrap !important;
+  word-break: keep-all !important;
+}
+/* ===================================================
+   👑 最終決戰：舊日支配者（BOSS 級）終極神話特效
+   =================================================== */
+
+/* 1. 🦑 海怪（KRAKEN）：深海恐懼（幽暗深藍底，帶有狂暴海嘯般的亮藍擴散） */
+.unit[label*="海怪"],
+.unit[data-label*="海怪"],
+.unit[label*="🦑"] {
+  background: linear-gradient(135deg, #0f172a, #1e3a8a, #0f172a) !important;
+  border: 3px solid #38bdf8 !important; /* 更粗的邊框 */
+  box-shadow: 0 0 25px #0284c7, inset 0 0 15px #38bdf8 !important;
+  animation: krakenGlow 2.5s infinite ease-in-out !important;
+}
+@keyframes krakenGlow {
+  0%,
+  100% {
+    filter: drop-shadow(0 0 10px #0284c7) brightness(1);
+    transform: scale(1);
+  }
+  50% {
+    filter: drop-shadow(0 0 35px #06b6d4) brightness(1.2);
+    transform: scale(1.03); /* 微微膨脹的壓迫感 */
+  }
+}
+
+/* 2. 🔥 炎魔（BALROG）：地獄劫火（岩漿裂變暗紅底，金黃邊框，自帶燃燒震顫） */
+.unit[label*="炎魔"],
+.unit[data-label*="炎魔"],
+.unit[label*="🔥"] {
+  background: linear-gradient(145deg, #450a0a, #7f1d1d, #1c1917) !important;
+  border: 3px solid #f97316 !important;
+  box-shadow: 0 0 30px #ef4444, inset 0 0 20px #f97316 !important;
+  animation: balrogFire 1.8s infinite linear !important;
+}
+@keyframes balrogFire {
+  0%,
+  100% {
+    filter: drop-shadow(0 0 12px #b91c1c) brightness(1);
+  }
+  50% {
+    filter: drop-shadow(0 0 40px #f97316) brightness(1.4);
+    transform: translate(0.5px, -0.5px) scale(1.02); /* 營造火焰熱浪震顫感 */
+  }
+}
+
+/* 3. 👑 龍王（DRAGON_KING）：不朽神皇（純黑與極致璀璨金，帝王逆鱗天災） */
+.unit[label*="龍王"],
+.unit[data-label*="龍王"],
+.unit[label*="👑"] {
+  background: linear-gradient(135deg, #000000, #451a03, #000000) !important;
+  border: 3px solid #fbbf24 !important;
+  box-shadow: 0 0 35px #d97706, inset 0 0 25px #f59e0b !important;
+  animation: dragonKingRoyal 2s infinite ease-in-out !important;
+}
+@keyframes dragonKingRoyal {
+  0%,
+  100% {
+    filter: drop-shadow(0 0 15px #d97706) brightness(1);
+  }
+  25% {
+    filter: drop-shadow(0 0 25px #fbbf24) brightness(1.3);
+  }
+  50% {
+    filter: drop-shadow(0 0 45px #f59e0b) brightness(1.5);
+    transform: scale(1.04);
+  }
+}
+
+/* 🎯 額外補丁：如果是 Boss，強制把字體放大並加粗，不然配不上血條 */
+.unit[label*="🦑"] .unit-label,
+.unit[label*="🔥"] .unit-label,
+.unit[label*="👑"] .unit-label {
+  font-size: 14px !important;
+  font-weight: 900 !important;
+  text-shadow: 0 0 6px #000 !important;
+}
+/* ===================================================
+   🗺️ 最終決戰：魔王領地地圖異變天色
+   =================================================== */
+
+/* 1. 🦑 海怪領地：深淵幽閉（地圖轉為窒息的深海幽藍，線條泛起死寂青光） */
+.map-page-container.boss-kraken {
+  background: radial-gradient(circle, #0f172a 30%, #020617 100%) !important;
+  transition: all 1.5s ease-in-out;
+}
+.map-page-container.boss-kraken .route-node {
+  border-color: #06b6d4 !important;
+  box-shadow: 0 0 8px rgba(6, 182, 212, 0.4);
+}
+
+/* 2. 🔥 炎魔領地：末日餘燼（地圖轉為焦黑岩漿色，四周泛起滾燙暗紅光暈） */
+.map-page-container.boss-balrog {
+  background: radial-gradient(circle, #1c1917 20%, #450a0a 100%) !important;
+  box-shadow: inset 0 0 100px rgba(239, 68, 68, 0.2) !important;
+  transition: all 1.5s ease-in-out;
+}
+.map-page-container.boss-balrog .route-node {
+  border-color: #f97316 !important;
+  box-shadow: 0 0 10px rgba(249, 115, 22, 0.4);
+}
+
+/* 3. 👑 龍王領地：神皇黃昏（地圖轉為純黑肅殺，邊緣散發帝王破滅殘金） */
+.map-page-container.boss-dragon_king {
+  background: radial-gradient(circle, #050505 40%, #291305 100%) !important;
+  box-shadow: inset 0 0 120px rgba(217, 119, 6, 0.15) !important;
+  transition: all 1.5s ease-in-out;
+}
+.map-page-container.boss-dragon_king .route-node {
+  border-color: #fbbf24 !important;
+  box-shadow: 0 0 12px rgba(251, 191, 36, 0.3);
+}
+/* ===================================================
+   🎬 遊戲序幕：舊日支配者之瞳（TITLE SCREEN）
+   =================================================== */
+
+/* 1. 封面容器（全螢幕深淵漸層） */
+.title-screen-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: radial-gradient(
+    circle at center,
+    #0a0e1a 10%,
+    #000 100%
+  ) !important;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999999; /* 確保蓋住所有東西 */
+  font-family: "Courier New", Courier, monospace;
+  overflow: hidden;
+}
+
+/* 2. 背景粒子漂浮 */
+.title-screen-container::before {
+  content: "";
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background-image: radial-gradient(
+      white,
+      rgba(255, 255, 255, 0.2) 2px,
+      transparent 4px
+    ),
+    radial-gradient(white, rgba(255, 255, 255, 0.15) 1px, transparent 3px);
+  background-size: 550px 550px, 350px 350px;
+  background-position: 0 0, 40px 60px;
+  opacity: 0.1;
+  animation: backgroundScroll 60s linear infinite;
+}
+@keyframes backgroundScroll {
+  from {
+    transform: translate(0, 0);
+  }
+  to {
+    transform: translate(-100px, -100px);
+  }
+}
+
+/* 3. 核心視覺：舊日支配者之瞳 */
+.mythic-eye {
+  position: relative;
+  width: 200px;
+  height: 200px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 50px;
+  transform: rotate(45deg); /* 硬派幾何旋轉 */
+}
+
+/* 瞳孔（幾何堆疊與魔王屬性呼吸漸層） */
+.mythic-eye-iris {
+  position: absolute;
+  width: 80px;
+  height: 80px;
+  background: linear-gradient(135deg, #a855f7, #38bdf8, #ef4444, #fbbf24);
+  background-size: 400% 400%;
+  border: 4px solid #fff;
+  border-radius: 50%; /* Kraken 圓形タン */
+  box-shadow: 0 0 30px rgba(168, 85, 247, 0.6),
+    inset 0 0 15px rgba(255, 255, 255, 0.4);
+  animation: mythicIrisColorShift 10s ease-in-out infinite,
+    mythicIrisPulse 3s ease-in-out infinite;
+}
+
+/* 調整外環 A（炎魔之痕：順時針中速旋轉） */
+.mythic-eye-ring {
+  position: absolute;
+  width: 160px;
+  height: 160px;
+  border: 2px solid rgba(251, 191, 36, 0.65);
+  border-radius: 4px;
+  box-shadow: 0 0 25px rgba(239, 68, 68, 0.25),
+    inset 0 0 15px rgba(251, 191, 36, 0.15) !important;
+  animation: mythicRingClockwise 12s linear infinite;
+}
+
+/* 🎯 新增內環 B（虛空裂變：逆時針高速旋轉，角度偏轉 30 度） */
+.mythic-eye-ring-inner {
+  position: absolute;
+  width: 120px;
+  height: 120px;
+  border: 1px dashed rgba(56, 189, 248, 0.7); /* 虛線，增加科技/術式感 */
+  border-radius: 2px;
+  transform: rotate(-30deg);
+  box-shadow: 0 0 20px rgba(168, 85, 247, 0.3) !important;
+  animation: mythicRingCounterClockwise 8s linear infinite;
+}
+
+/* 🎯 新增外環 C（神皇逆鱗：順時針極慢速大方陣，角度偏轉 15 度） */
+.mythic-eye-ring-outer {
+  position: absolute;
+  width: 200px;
+  height: 200px;
+  border: 1px solid rgba(168, 85, 247, 0.4);
+  border-radius: 8px;
+  transform: rotate(15deg);
+  box-shadow: 0 0 35px rgba(6, 182, 212, 0.15) !important;
+  animation: mythicRingClockwise 25s linear infinite;
+}
+
+/* ─── 🧭 全新多重宇宙旋轉動畫軌跡 ─── */
+@keyframes mythicRingClockwise {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes mythicRingCounterClockwise {
+  from {
+    transform: rotate(360deg);
+  }
+  to {
+    transform: rotate(0deg);
+  }
+}
+
+/* 神話瞳孔顏色漸層呼吸 */
+@keyframes mythicIrisColorShift {
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+  25% {
+    background-position: 100% 50%;
+  } /* 岩漿紅 */
+  50% {
+    background-position: 50% 100%;
+  } /* 深海藍 */
+  75% {
+    background-position: 50% 0%;
+  } /* 帝王金 */
+}
+@keyframes mythicIrisPulse {
+  0%,
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 30px rgba(168, 85, 247, 0.6);
+  }
+  50% {
+    transform: scale(1.05);
+    box-shadow: 0 0 50px rgba(168, 85, 247, 0.8);
+  }
+}
+@keyframes mythicRingRotate {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* 4. 遊戲主標題 (像素風+紫色霓虹) */
+.game-title {
+  font-family: "Courier New", Courier, monospace; /* 模擬像素風硬派質感 */
+  font-size: 56px;
+  font-weight: 900;
+  color: #fff;
+  letter-spacing: 4px;
+  margin-bottom: 10px;
+  text-shadow: 0 0 10px #a855f7, 0 0 20px #a855f7, 0 0 30px #a855f7 !important;
+  animation: titleNeonBreathe 2s ease-in-out infinite;
+}
+@keyframes titleNeonBreathe {
+  0%,
+  100% {
+    text-shadow: 0 0 10px #a855f7, 0 0 20px #a855f7, 0 0 30px #a855f7;
+  }
+  50% {
+    text-shadow: 0 0 15px #a855f7, 0 0 30px #a855f7, 0 0 45px #a855f7;
+  }
+}
+
+/* 5. 副標題與版本資訊 */
+.game-subtitle {
+  font-size: 14px;
+  color: #64748b;
+  letter-spacing: 1px;
+  margin-bottom: 60px;
+}
+
+/* 6. 「進入深淵」像素按鈕 */
+.start-game-btn {
+  padding: 15px 40px;
+  font-family: "Courier New", Courier, monospace;
+  font-size: 18px;
+  font-weight: bold;
+  background: transparent;
+  color: #eab308;
+  border: 2px dashed #f59e0b;
+  border-radius: 4px;
+  cursor: pointer;
+  letter-spacing: 2px;
+  transition: all 0.2s ease-in-out;
+  position: relative;
+  overflow: hidden;
+}
+.start-game-btn:hover {
+  background: #f59e0b;
+  color: #000;
+  box-shadow: 0 0 20px rgba(245, 158, 11, 0.5);
+}
+/* ===================================================
+   🐋 巨獸降臨：舊日支配者 2*2 超視覺污染體積
+   =================================================== */
+
+/* 強行讓魔王的外層包裹容器溢出格子 */
+.grid-cell:has(.final-boss-style) {
+  position: relative;
+  z-index: 9999 !important; /* 確保魔王的身軀絕對壓在周圍格子的上方 */
+}
+
+/* 巨獸本體：利用 transform 放大 2 倍 (面積等同 2*2 個格子) */ /* 1. 修正本體容器：加入 border-radius: 50% 封鎖方形外框 */
+.final-boss-style {
+  position: absolute !important;
+  width: 200% !important;
+  height: 200% !important;
+  top: -50% !important;
+  left: -50% !important;
+
+  /* 🎯 關鍵修補：強行將外層物理矩陣變成圓形，抹除四個直角 */
+  border-radius: 50% !important;
+
+  z-index: 10000 !important;
+  transition: all 0.3s ease-in-out;
+  animation: bossPulse 2s infinite alternate ease-in-out;
+}
+/* 2. 修正動畫矩陣：確保脈衝時也是圓形軌跡 */
+@keyframes bossPulse {
+  0% {
+    /* 💥 龍王用金黃與深紫交織的神話霓虹光暈 */
+    box-shadow: 0 0 30px rgba(251, 191, 36, 0.6),
+      inset 0 0 15px rgba(168, 85, 247, 0.4) !important;
+    transform: scale(1);
+  }
+  100% {
+    box-shadow: 0 0 65px rgba(168, 85, 247, 0.85),
+      0 0 35px rgba(251, 191, 36, 0.5), inset 0 0 25px rgba(56, 189, 248, 0.6) !important;
+    transform: scale(1.04);
+  }
+}
+
+/* 🎯 巨獸血條與字體對齊補丁 (因為體積放大，原本的血條和字會縮在裡面，必須跟著放大) */
+.final-boss-style .unit-label {
+  font-size: 26px !important; /* 名字Emoji字體加大！ */
+  font-weight: 900 !important;
+  letter-spacing: 2px;
+}
+
+.final-boss-style .unit-status-block {
+  width: 80% !important; /* 血條拉長 */
+  transform: translateY(15px) !important; /* 把血條往下推到巨獸腳底 */
+}
+
+.final-boss-style .hp-text-below {
+  font-size: 14px !important; /* 血量文字加大 */
+  font-weight: bold;
+}
+/* 🥇 傳奇 PLUS 三星英雄外觀 */
+.unit-plus-style {
+  box-shadow: 0 0 15px #fbbf24, inset 0 0 5px #fbbf24 !important;
+  border: 2px solid #fbbf24 !important;
+  animation: plusGlow 1.5s infinite alternate ease-in-out;
+}
+@keyframes plusGlow {
+  0% {
+    box-shadow: 0 0 10px #fbbf24;
+  }
+  100% {
+    box-shadow: 0 0 22px #f59e0b, 0 0 5px #fff;
+  }
+}
