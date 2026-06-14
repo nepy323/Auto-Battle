@@ -48,7 +48,7 @@ const labelToImageKeyMap = {
   "虛空吞噬者·卡薩丁": "KRAKEN",
   "煉獄炎魔·巴洛格": "BALROG",
   "滅世巨龍·奧杜因": "DRAGON_KING",
-  雷霆祭司: "DOWN",
+  雷霆祭司: "LUCIFER",
   護衛禁軍: "GUARD",
 };
 

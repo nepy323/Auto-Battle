@@ -41,8 +41,8 @@ h3 {
 }
 
 /* ===================================================
-     🐉 2. 核心 5x5 棋盤與自適應動態視角
-     =================================================== */
+        🐉 2. 核心 5x5 棋盤與自適應動態視角
+        =================================================== */
 .battle-board {
   display: grid;
   grid-template-columns: repeat(5, 1fr); /* 完美適應 5 欄 */
@@ -91,8 +91,8 @@ h3 {
 }
 
 /* ===================================================
-     🎯 3. 棋子幾何形狀與陣營渲染（徹底修復顏色與破版）
-     =================================================== */
+        🎯 3. 棋子幾何形狀與陣營渲染（徹底修復顏色與破版）
+        =================================================== */
 .unit-container {
   display: flex;
   flex-direction: column;
@@ -180,7 +180,7 @@ h3 {
   width: max-content;
 }
 
-/* 🔮 下三角 (法師) 專屬上色邏輯：背景必須保持透明，改用 border-top 上色 */
+/* 🔮 下三角 (法師) 專專屬上色邏輯：背景必須保持透明，改用 border-top 上色 */
 .shape-triangle-down {
   background-color: transparent !important;
   width: 0;
@@ -249,8 +249,8 @@ h3 {
      🔮 4. 戰鬥實時互動與特效動畫
      =================================================== */
 /* ===================================================
-   ⚔️ 4. 戰鬥實時互動與特效動畫（幾何徽記與標籤完全咬合版）
-   =================================================== */
+     ⚔️ 4. 戰鬥實時互動與特效動畫（幾何徽記與標籤完全咬合版）
+     =================================================== */
 
 .action-wrapper {
   transition: transform 0.1s ease-in-out;
@@ -359,6 +359,28 @@ h3 {
   }
 }
 
+/* ⛪ 4.5. 補齊死角：【十十字 (CROSS) / 牧師 / 大賢者 / 血法師】-> 聖光共振與禁忌儀式 */
+.action-wrapper.attacking:has(.shape-cross),
+.action-wrapper.attacking:has([label*="牧師"]),
+.action-wrapper.attacking:has([label*="大賢者"]),
+.action-wrapper.attacking:has([label*="血法師"]) {
+  animation: crossCast 0.35s ease-out forwards;
+  z-index: 75;
+}
+@keyframes crossCast {
+  0% {
+    transform: scale(1);
+  }
+  30% {
+    transform: scale(1.18);
+    filter: brightness(1.6) drop-shadow(0 0 10px #f59e0b);
+  } /* 神聖能量外溢 */
+  100% {
+    transform: scale(1);
+    filter: brightness(1);
+  }
+}
+
 /* 👑 5. 【魔王級 (FINAL-BOSS) / 舊日支配者】-> 虛空黑洞沉降與位能碾壓 */
 .action-wrapper.attacking:has(.final-boss-style) {
   animation: bossCataclysm 0.45s cubic-bezier(0.19, 1, 0.22, 1) forwards;
@@ -380,6 +402,23 @@ h3 {
   100% {
     transform: scale(1) translateY(0);
     filter: brightness(1);
+  }
+}
+
+/* 🎯 5.5. 兜底防線：確保所有一般未分類小怪或亂入單位在攻擊時也能動起來 */
+.action-wrapper.attacking {
+  animation: defaultMeleeBump 0.25s ease-out forwards;
+}
+@keyframes defaultMeleeBump {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.12) translateY(-10px);
+    filter: brightness(1.2);
+  } /* 標準向前突刺微震 */
+  100% {
+    transform: scale(1) translateY(0);
   }
 }
 
@@ -435,8 +474,8 @@ h3 {
 }
 
 /* ==========================================
-   ✨ 2D 彈道投射物・霓虹發光極光版（徹底除髒）
-   ========================================== */
+     ✨ 2D 彈道投射物・霓虹發光極光版（徹底除髒）
+     ========================================== */
 .projectile {
   position: absolute;
   z-index: 99;
@@ -490,8 +529,8 @@ h3 {
 }
 
 /* ==========================================
-     🎬 極光震盪動畫時鐘
-     ========================================== */
+        🎬 極光震盪動畫時鐘
+        ========================================== */
 @keyframes plasmaPulse {
   0% {
     transform: scale(0.8);
@@ -574,8 +613,8 @@ h3 {
 }
 
 /* ===================================================
-     🗺️ 5. 其他系統 UI（天賦、地圖、商店、HUD）
-     =================================================== */
+        🗺️ 5. 其他系統 UI（天賦、地圖、商店、HUD）
+        =================================================== */
 .talent-container {
   display: flex;
   gap: 20px;
@@ -697,7 +736,7 @@ h3 {
 }
 @keyframes pulse {
   0%,
-  100% {
+  100 {
     opacity: 0.8;
   }
   50% {
@@ -827,7 +866,7 @@ button[onClick*="startBattle"],
   z-index: 9991 !important;
   position: relative;
 }
-/* 🤖 蒸汽機兵專屬機械外框樣式 */
+/* 🤖 蒸汽機兵專專屬機械外框樣式 */
 .unit[label*="機兵"] {
   border: 2px solid #94a3b8 !important; /* 鋼鐵灰邊框 */
   box-shadow: 0 0 8px rgba(148, 163, 184, 0.5),
@@ -835,8 +874,8 @@ button[onClick*="startBattle"],
 }
 
 /* ===================================================
-   🌟 傳奇特殊職業專屬：神話級外觀特效
-   =================================================== */
+     🌟 傳奇特殊職業專屬：神話級外觀特效
+     =================================================== */
 
 /* 1. 🐉 龍騎士：烈焰重甲（深紅底金邊，帶呼吸火光） */
 .unit[label*="龍騎士"] {
@@ -904,8 +943,8 @@ button[onClick*="startBattle"],
   word-break: keep-all !important;
 }
 /* ===================================================
-   👑 最終決戰：舊日支配者（BOSS 級）終極神話特效
-   =================================================== */
+     👑 最終決戰：舊日支配者（BOSS 級）終極神話特效
+     =================================================== */
 
 /* 1. 🦑 海怪（KRAKEN）：深海恐懼（幽暗深藍底，帶有狂暴海嘯般的亮藍擴散） */
 .unit[label*="海怪"],
@@ -980,8 +1019,8 @@ button[onClick*="startBattle"],
   text-shadow: 0 0 6px #000 !important;
 }
 /* ===================================================
-   🗺️ 最終決戰：魔王領地地圖異變天色
-   =================================================== */
+     🗺️ 最終決戰：魔王領地地圖異變天色
+     =================================================== */
 
 /* 1. 🦑 海怪領地：深淵幽閉（地圖轉為窒息的深海幽藍，線條泛起死寂青光） */
 .map-page-container.boss-kraken {
@@ -1015,8 +1054,8 @@ button[onClick*="startBattle"],
   box-shadow: 0 0 12px rgba(251, 191, 36, 0.3);
 }
 /* ===================================================
-   🎬 遊戲序幕：舊日支配者之瞳（TITLE SCREEN）
-   =================================================== */
+     🎬 遊戲序幕：舊日支配者之瞳（TITLE SCREEN）
+     =================================================== */
 
 /* 1. 封面容器（全螢幕深淵漸層） */
 .title-screen-container {
@@ -1236,8 +1275,8 @@ button[onClick*="startBattle"],
   box-shadow: 0 0 20px rgba(245, 158, 11, 0.5);
 }
 /* ===================================================
-   🐋 巨獸降臨：舊日支配者 2*2 超視覺污染體積
-   =================================================== */
+     🐋 巨獸降臨：舊日支配者 2*2 超視覺污染體積
+     =================================================== */
 
 /* 強行讓魔王的外層包裹容器溢出格子 */
 .grid-cell:has(.final-boss-style) {
@@ -1306,8 +1345,8 @@ button[onClick*="startBattle"],
   }
 }
 /* ===================================================
-   🏹 攻擊方向實時霓虹指示器（無實體彈道備援方案）
-   =================================================== */
+     🏹 攻擊方向實時霓虹指示器（無實體彈道備援方案）
+     =================================================== */
 .arrow-neon-core {
   font-size: 24px;
   color: #ffffff;
@@ -1337,8 +1376,8 @@ button[onClick*="startBattle"],
   }
 }
 /* ===================================================
-   👿 舊日支配者隨從：深淵暗黑系神話特效
-   =================================================== */
+     👿 舊日支配者隨從：深淵暗黑系神話特效
+     =================================================== */
 
 /* 1. 🛡️ 護衛禁軍：鐵血不落（暗紅黑鋼底，帶有沉重的血光外光暈與鋼鐵外框） */
 .unit[label*="護衛禁軍"],
@@ -1387,4 +1426,119 @@ button[onClick*="startBattle"],
 .unit[label*="護衛禁軍"] img,
 .unit[label*="雷霆祭司"] img {
   filter: brightness(0.75) contrast(1.2) drop-shadow(0 0 4px rgba(0, 0, 0, 0.8));
+}
+
+/* ===================================================
+     😈 舊日支配者・硬核戰場網格視覺異變管線
+     =================================================== */
+
+/* 1. 🔥 狂暴魔物（enemy-enraged-aura）：不祥血霧與極速微顫 */
+.unit.enemy-enraged-aura {
+  background: linear-gradient(135deg, #7f1d1d, #000000) !important;
+  border: 2px dashed #ef4444 !important;
+  box-shadow: 0 0 15px #ef4444, inset 0 0 8px #7f1d1d !important;
+  animation: enragedPulse 0.4s infinite linear,
+    enragedTremor 0.15s infinite linear;
+}
+@keyframes enragedPulse {
+  0%,
+  100% {
+    filter: drop-shadow(0 0 4px #ef4444) brightness(1.1);
+  }
+  50% {
+    filter: drop-shadow(0 0 16px #ff0000) brightness(1.4);
+  }
+}
+@keyframes enragedTremor {
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+  25% {
+    transform: translate(0.5px, -0.5px) scale(1.01);
+  }
+  75% {
+    transform: translate(-0.5px, 0.5px) scale(0.99);
+  }
+}
+
+/* 2. 🔮 精英怪（enemy-elite-shimmer）：奧術紫光微粒與星芒折射 */
+.unit.enemy-elite-shimmer {
+  background: linear-gradient(135deg, #3b0764, #030712) !important;
+  border: 2px solid #c084fc !important;
+  box-shadow: 0 0 12px #a855f7, inset 0 0 6px rgba(168, 85, 247, 0.4) !important;
+  animation: eliteShimmer 2s infinite ease-in-out;
+}
+@keyframes eliteShimmer {
+  0%,
+  100% {
+    filter: drop-shadow(0 0 4px #a855f7) contrast(1);
+  }
+  50% {
+    filter: drop-shadow(0 0 20px #d846ff) contrast(1.35) brightness(1.2);
+  }
+}
+
+/* 3. 👑 魔王蓄力怒吼（boss-rage-glow）：全場網格位能撕裂（利用網格混合模式） */
+.unit.boss-rage-glow {
+  animation: bossVoidRage 1s infinite alternate cubic-bezier(0.25, 1, 0.5, 1) !important;
+}
+@keyframes bossVoidRage {
+  0% {
+    box-shadow: 0 0 25px #6d28d9, 0 0 50px rgba(109, 40, 217, 0.5),
+      inset 0 0 15px #4c1d95 !important;
+    filter: brightness(1) hue-rotate(0deg);
+  }
+  100% {
+    box-shadow: 0 0 45px #ef4444, 0 0 90px rgba(239, 68, 68, 0.7),
+      inset 0 0 25px #7f1d1d !important;
+    filter: brightness(1.5) hue-rotate(15deg);
+    transform: scale(1.05);
+  }
+}
+
+/* 4. ⚡ 奧術電漿隨從（minion-spark-effect）：高頻率雷擊閃爍 */
+.unit.minion-spark-effect {
+  border-color: #06b6d4 !important;
+  animation: sparkFlicker 0.2s infinite alternate ease-in-out;
+}
+@keyframes sparkFlicker {
+  0% {
+    box-shadow: 0 0 4px #06b6d4;
+    filter: brightness(1);
+  }
+  100% {
+    box-shadow: 0 0 18px #00ffff, inset 0 0 10px rgba(0, 255, 255, 0.6);
+    filter: brightness(1.4);
+  }
+}
+
+/* 5. 🛡️ 重裝禁軍（minion-shield-iron）：死寂重甲反光 */
+.unit.minion-shield-iron {
+  border: 2px solid #64748b !important;
+  box-shadow: 0 0 8px #334155, inset 0 0 12px rgba(148, 163, 184, 0.3) !important;
+  animation: ironMatte 3s infinite ease-in-out;
+}
+@keyframes ironMatte {
+  0%,
+  100% {
+    filter: brightness(0.85) contrast(1.1);
+  }
+  50% {
+    filter: brightness(1.05) contrast(1.2);
+  }
+}
+
+/* 6. 🟢 治癒/補血跳字爆裂特效（強化浮動文字） */
+.floating-text[class*="heal"] {
+  color: #10b981 !important;
+  text-shadow: 0 0 8px #059669, 2px 2px 0px #000 !important;
+  font-size: 18px !important;
+}
+
+/* 7. 🔮 奧術護盾跳字爆裂特效 */
+.floating-text[class*="shield"] {
+  color: #38bdf8 !important;
+  text-shadow: 0 0 8px #0284c7, 2px 2px 0px #000 !important;
+  font-size: 18px !important;
 }

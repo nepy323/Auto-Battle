@@ -366,117 +366,117 @@ export const UNIT_BLUEPRINTS = {
 export const ENEMY_BLUEPRINTS = {
   goblin: {
     label: "哥布林",
-    maxHp: 250,
-    atk: 25,
-    def: 2,
+    maxHp: 180, // 250 -> 180 常規炮灰
+    atk: 18,    // 25 -> 18
+    def: 1,
     enemyType: "goblin",
     tags: ["物理"],
   },
   harpy: {
     label: "哈比鷹身人",
-    maxHp: 350,
-    atk: 35,
+    maxHp: 240, // 350 -> 240
+    atk: 26,    // 35 -> 26
     def: 1,
     enemyType: "harpy",
     tags: ["物理"],
   },
   direwolf: {
     label: "兇暴狼獸",
-    maxHp: 400,
-    atk: 40,
-    def: 3,
+    maxHp: 310, // 400 -> 310
+    atk: 32,    // 40 -> 32
+    def: 2,
     enemyType: "direwolf",
     tags: ["物理"],
   },
   orc: {
     label: "獸人戰士",
-    maxHp: 532,
-    atk: 50,
-    def: 8,
+    maxHp: 420, // 532 -> 420 標準前排
+    atk: 38,    // 50 -> 38
+    def: 5,     // 8 -> 5
     enemyType: "orc",
     tags: ["物理"],
   },
   succubus: {
     label: "魅魔",
-    maxHp: 721,
-    atk: 55,
-    def: 4,
+    maxHp: 510, // 721 -> 510
+    atk: 42,    // 55 -> 42
+    def: 3,
     enemyType: "succubus",
     tags: ["暗", "吸血"],
   },
   gargoyle: {
     label: "石像鬼",
-    maxHp: 900,
-    atk: 60,
-    def: 15,
+    maxHp: 620, // 900 -> 620（防止前期滾出 1100+ 血的鐵板）
+    atk: 45,    // 60 -> 45
+    def: 10,    // 15 -> 10
     enemyType: "gargoyle",
     tags: ["物理", "格擋"],
   },
   troll: {
     label: "巨魔",
-    maxHp: 2493,
-    atk: 85,
-    def: 10,
+    maxHp: 1350, // 2493 -> 1350 大幅砍血，防止前期卡死
+    atk: 62,     // 85 -> 62
+    def: 6,      // 10 -> 6
     enemyType: "troll",
     tags: ["物理"],
   },
   skeleton_tyrant: {
     label: "骷髏暴君",
-    maxHp: 2530,
-    atk: 110,
-    def: 12,
+    maxHp: 1420, // 2530 -> 1420
+    atk: 75,     // 110 -> 75
+    def: 8,      // 12 -> 8
     enemyType: "skeleton_tyrant",
     tags: ["暗", "格擋"],
   },
   necro_assassin: {
     label: "死靈刺客",
-    maxHp: 1265,
-    atk: 140,
-    def: 4,
+    maxHp: 880,  // 1265 -> 880
+    atk: 82,     // 140 -> 82 高威脅點殺降溫
+    def: 3,
     enemyType: "necro_assassin",
     tags: ["毒", "暗"],
   },
   troll_priest: {
     label: "巨魔祭司",
-    maxHp: 2461,
-    atk: 65,
-    def: 6,
+    maxHp: 1250, // 2461 -> 1250 防止對面無限互奶死鎖
+    atk: 45,     // 65 -> 45
+    def: 4,
     enemyType: "troll_priest",
     tags: ["暗", "補血"],
   },
   storm_witch: {
     label: "風暴魔女",
-    maxHp: 1537,
-    atk: 95,
-    def: 5,
+    maxHp: 980,  // 1537 -> 980
+    atk: 60,     // 95 -> 60
+    def: 4,
     enemyType: "storm_witch",
     tags: ["冰", "電"],
   },
 
-  // 最終三大魔王與隨從
+  // ─── 👑 最終三大魔王降溫公式基底 ───
   KRAKEN: {
     label: "虛空吞噬者·卡薩丁",
-    maxHp: 30000,
-    atk: 350,
-    def: 25,
+    maxHp: 22000, // 30000 -> 22000
+    atk: 220,     // 350 -> 220
+    def: 18,      // 25 -> 18
     enemyType: "kraken",
     tags: ["冰", "暗", "魔力護盾"],
     isBoss: true,
   },
   BALROG: {
     label: "煉獄炎魔·巴洛格",
-    maxHp: 25920,
-    atk: 400,
-    def: 20,
+    maxHp: 20000, // 25920 -> 20000
+    atk: 240,     // 400 -> 240
+    def: 15,
     enemyType: "balrog",
     tags: ["火", "暗", "吸血"],
     isBoss: true,
   },
   DRAGON_KING: {
     label: "滅世巨龍·奧杜因",
-    maxHp: 45000,
-    atk: 500,
-    def: 40,
+    maxHp: 28000, // 45000 -> 28000 斬斷破五萬血的絕望數據
+    atk: 280,     // 500 -> 280
+    def: 25,      // 40 -> 25
     enemyType: "dragon_king",
     tags: ["火", "物理", "格擋"],
     isBoss: true,
