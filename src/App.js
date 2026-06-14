@@ -38,7 +38,6 @@ const GODDESS_BLESSINGS = {
   },
 };
 
-// 🎯 提案 C：命運奇遇隨機事件庫
 // 🎯 提案 C：完全體命運奇遇隨機事件庫（四合一終極版）
 const RANDOM_EVENTS = [
   {
@@ -397,63 +396,87 @@ function App() {
 
     alert(`📥 成功招募：【${bp.label}】已送往備戰區冷板凳！`);
 
-    // 5. 🎯 核心合成管線
+    // 🔒 備戰區合成回寫核心
     setBenchUnits((prevBench) => {
-      const updatedBench = [...prevBench, newUnit];
+      const safeBench = Array.isArray(prevBench)
+        ? prevBench.filter(Boolean)
+        : [];
+      const updatedBench = [...safeBench, newUnit];
 
-      // 🛑 攔截機制：如果買的是進階轉職職業、傳奇獨立職業（如忍者）、或已經是 Plus 版，直接入庫，不參與三合一熔煉
-      if (bp.isAdvanced || bp.isLegendary || bp.isPlus || !bp.canPromote) {
+      // 1. 如果是開局自動塞兵（slotIndex === null 且 unitKey 是基本 Key），直接放行不合成
+      if (
+        slotIndex === null &&
+        ["CIRCLE", "SQUARE", "TRI_UP", "TRI_DOWN", "DIAMOND", "CROSS"].includes(
+          unitKey
+        )
+      ) {
         return updatedBench;
       }
 
-      // 🔍 精確篩選：找出備戰區裡，名字完全一樣、且還沒變成 PLUS、也不是進階轉職的基礎單位
+      // 2. 如果買的是高級或傳奇獨立職業，直接放行
+      if (bp.isAdvanced || bp.isLegendary || bp.isPlus) {
+        return updatedBench;
+      }
+
+      // 🎯 【核心修復】改成用 label (例如 "坦克") 嚴格去數數量！
+      // 只要名字相同、不是 PLUS、不是進階，就納入合成計數
       const sameTypeUnits = updatedBench.filter(
-        (u) => u && u.label === bp.label && !u.isPlus && !u.isAdvanced
+        (u) =>
+          u &&
+          u.label === bp.label &&
+          !u.isPlus &&
+          !u.isAdvanced &&
+          !u.isLegendary
       );
 
-      // 🎯 滿 3 隻相同基礎兵：就地熔煉飛升成 PLUS 版本
+      // 🚀 當滿 3 隻時，發動幾何共鳴熔煉
       if (sameTypeUnits.length >= 3) {
-        // 抓出要消失的前兩隻英雄實體 ID
-        const discardIds = [sameTypeUnits[0].id, sameTypeUnits[1].id];
+        // 精確抓出前 3 隻相同角色的實體 ID 作為祭品
+        const discardIds = [
+          sameTypeUnits[0].id,
+          sameTypeUnits[1].id,
+          sameTypeUnits[2].id,
+        ];
 
-        // 核心熔煉
-        const finalBench = updatedBench.reduce((acc, u) => {
-          if (discardIds.includes(u.id)) {
-            return acc; // 物理蒸發前兩隻
-          }
-          if (u.id === sameTypeUnits[2].id) {
-            // 尋找對應幾何圖形的 _PLUS 藍圖（如 SQUARE_PLUS），確保完全對齊新數據
-            const plusKey = `${unitKey}_PLUS`;
-            const plusBlueprint = UNIT_BLUEPRINTS[plusKey] || bp;
+        // 將這 3 隻從整備區抹除
+        const cleanBench = updatedBench.filter(
+          (u) => u && !discardIds.includes(u.id)
+        );
 
-            // 第三隻就地加冕為 PLUS 版
-            return [
-              ...acc,
-              {
-                ...u,
-                id: `plus-${Date.now()}-${Math.random()}`,
-                shape: plusBlueprint.shape,
-                label: plusBlueprint.label, // 完美對齊 "戰士+"、"坦克+"
-                isPlus: true,
-                maxHp: plusBlueprint.maxHp,
-                hp: plusBlueprint.maxHp,
-                atk: plusBlueprint.atk,
-                def: plusBlueprint.def,
-                blueprintKey: plusKey,
-                visualState: "unit-plus-style",
-              },
-            ];
-          }
-          return [...acc, u];
-        }, []);
+        // 自動動態對齊 PLUS 進化型 Key (例如 CIRCLE_PLUS)
+        const plusKey = `${unitKey}_PLUS`;
+        const plusBlueprint = UNIT_BLUEPRINTS[plusKey] || bp;
 
+        // 繼承原本的圖片 shape 屬性與原稿 PLUS 屬性，生成全新進階實體
+        const newPlusUnit = {
+          ...newUnit, // 承襲圖案與基礎陣營設定
+          id: `plus-evolution-${Date.now()}-${Math.random()
+            .toString(36)
+            .substring(2, 7)}`,
+          blueprintKey: plusKey,
+          label: plusBlueprint.label || `${bp.label}+`,
+          maxHp: plusBlueprint.maxHp || bp.maxHp * 2,
+          hp: plusBlueprint.maxHp || bp.maxHp * 2,
+          atk: plusBlueprint.atk || bp.atk * 1.5,
+          def: plusBlueprint.def || bp.def + 5,
+          attackSpeed: plusBlueprint.attackSpeed || bp.attackSpeed,
+          moveSpeed: plusBlueprint.moveSpeed || bp.moveSpeed,
+          skillName: plusBlueprint.skillName,
+          skillQuote: plusBlueprint.skillQuote,
+          skillColor: plusBlueprint.skillColor,
+          skillIcon: plusBlueprint.skillIcon,
+          isPlus: true,
+          shapes: [unitKey, unitKey], // T2 進階雙徽記
+        };
+
+        // 延遲跳出提示，防止卡死 UI
         setTimeout(() => {
           alert(
-            `🥇【幾何共鳴進化】\n備戰區產生劇烈共鳴！三名【${bp.label}】完成融合！\n精英部隊【${bp.label}】正式降臨！`
+            `🥇【幾何共鳴】三名【${bp.label}】成功融合成精英體【${newPlusUnit.label}】！`
           );
         }, 50);
 
-        return finalBench;
+        return [...cleanBench, newPlusUnit];
       }
 
       return updatedBench;
@@ -1000,7 +1023,20 @@ function App() {
         // 🎯 鋼鐵封鎖線：常規波次篩選怪物時，除了排除 RaidBoss，必須「嚴格封鎖所有人造 Boss」偷跑
         const safePool = pool.filter((m) => !m.isRaidBoss && !m.isBoss);
 
-        if (currentBattleType === "elite" || isAmbushed) {
+        const currentWaveNum = Number(currentWave) || 1;
+
+        // 🛠️ 【此處已修正】難度機率平滑化防線
+        if (
+          currentWaveNum <= 2 &&
+          currentBattleType !== "elite" &&
+          !isAmbushed
+        ) {
+          // 🛡️ 第 1、2 波一般關卡，百分之百死鎖小怪，絕對不讓死靈刺客、骷髏暴君有空隙跑出來！
+          availableMonsters = safePool.filter((m) =>
+            ["goblin", "harpy", "direwolf", "orc"].includes(m.enemyType)
+          );
+        } else if (currentBattleType === "elite" || isAmbushed) {
+          // ⚔️ 如果是精英關或亂入，維持你原本寫好的硬核精英怪池
           if (currentWaveNum <= 2) {
             availableMonsters = safePool.filter((m) =>
               ["goblin", "harpy", "direwolf", "orc"].includes(m.enemyType)
@@ -1018,29 +1054,34 @@ function App() {
           }
           enemyCount = isAmbushed ? 4 : 3;
         } else {
-          if (currentWaveNum <= 2) {
-            availableMonsters = safePool.filter((m) =>
-              ["goblin", "harpy", "direwolf", "orc"].includes(m.enemyType)
-            );
-          } else if (currentWaveNum <= 5) {
-            availableMonsters = safePool.filter((m) =>
-              [
-                "goblin",
-                "harpy",
-                "direwolf",
-                "orc",
-                "succubus",
-                "gargoyle",
-                "troll",
-              ].includes(m.enemyType)
-            );
-          } else {
-            availableMonsters = safePool;
-          }
+          // 🎲 第 3 波後的一般關卡：依波次（Wave）給大怪不同的登場機率權重，波次越高大怪越多
+          safePool.forEach((m) => {
+            const isBigMonster = [
+              "gargoyle",
+              "troll",
+              "succubus",
+              "skeleton_tyrant",
+              "necro_assassin",
+            ].includes(m.enemyType);
+
+            if (isBigMonster) {
+              // 機率控制：第 3 波大怪只有 20% 權重入池，第 4 波 40%... 直到第 7 波後才 100% 解鎖
+              const spawnChance = Math.min(1, (currentWaveNum - 2) * 0.2);
+              if (Math.random() < spawnChance) {
+                availableMonsters.push(m);
+              }
+            } else {
+              // 基礎小怪永遠百分之百墊底入池
+              availableMonsters.push(m);
+            }
+          });
         }
 
+        // 🛡️ 雙重保險：如果骰運太好導致怪池空了，至少拉基礎四小怪頂著，絕對不回退 safePool
         if (availableMonsters.length === 0) {
-          availableMonsters = safePool;
+          availableMonsters = safePool.filter((m) =>
+            ["goblin", "harpy", "direwolf", "orc"].includes(m.enemyType)
+          );
         }
 
         let attempts = 0;
@@ -1275,6 +1316,7 @@ function App() {
 
       setBoardState((prevBoard) => {
         const nextBoard = cloneBoardState(prevBoard);
+
         const activeUnits = Object.values(nextBoard).filter(
           (u) => u && u.hp > 0
         );
@@ -1307,27 +1349,50 @@ function App() {
         ) => {
           if (!targetUnit || targetUnit.hp <= 0) return;
 
-          // 1. 閃避判定 (刺客/忍者/靈魂行者天賦)
-          if (Math.random() * 100 < targetUnit.eva) {
-            triggerFloatingText(targetCellId, "MISS", "miss");
+          // ==========================================
+          // 🛡️ 回應 1：【迴避】判定 (普攻、技能皆可迴避)
+          // ==========================================
+          // 優先讀取新工廠生成的動態 evasion 欄位，若無則兜底使用舊版 eva
+          const targetEvasion =
+            targetUnit.evasion !== undefined
+              ? targetUnit.evasion
+              : targetUnit.eva || 0;
+          if (Math.random() * 100 < targetEvasion) {
+            triggerFloatingText(targetCellId, "MISS 💨", "miss");
             addLog(
-              `💨 【${attacker.label}】致命一擊被【${targetUnit.label}】輕巧閃避！`
+              `💨 【${targetUnit.label}】身形一閃，精確【迴避】了【${attacker.label}】的猛烈攻擊！`
             );
-            return;
+            return; // 觸發迴避，直接中斷管線，完全免疫傷害
           }
 
-          let damage = rawAtk;
+          let damage = rawAtk || attacker.atk || 10; // 基礎攻擊力
           let isBlocked = false;
 
-          // 2. 格擋判定 (坦克/守護者/聖堂武士天賦)
-          if (Math.random() * 100 < targetUnit.blk) {
-            damage = Math.floor(damage * 0.5);
-            isBlocked = true;
+          // ==========================================
+          // 🛡️ 回應 2：【格擋】判定 (僅普攻，大招不觸發)
+          // ==========================================
+          // 判斷是否為技能大招（檢查當前攻擊是否帶有暴擊、大招特效標籤，或 attacker.visualState === "crit-hit"）
+          const isSkillAttack = attacker.visualState === "crit-hit";
+
+          if (!isSkillAttack) {
+            const targetBlockRate =
+              targetUnit.blockRate !== undefined
+                ? targetUnit.blockRate
+                : targetUnit.blk || 0;
+
+            // 只要格擋率大於 0 且隨機滾點成功
+            if (targetBlockRate > 0 && Math.random() * 100 < targetBlockRate) {
+              damage = Math.floor(damage * 0.5); // 格擋成功：傷害直接物理減半
+              isBlocked = true;
+            }
           }
 
-          let baseDef = targetUnit.def;
+          // ==========================================
+          // 🛡️ 回應 3：【防禦】減傷判定 (防禦光環與大招皆受防禦影響)
+          // ==========================================
+          let baseDef = targetUnit.def || 0;
 
-          // 3. 守護者/舊版聖職者防禦光環動態判定
+          // 1. 周圍牧師與守護者防禦光環動態判定 (保留原稿隊友加防機制)
           if (targetUnit.faction === FACTIONS.PLAYER) {
             const targetCellKey = Object.keys(currentBoard).find(
               (key) => currentBoard[key]?.id === targetUnit.id
@@ -1346,60 +1411,86 @@ function App() {
                   const neighbor = currentBoard[checkKey];
                   if (neighbor && neighbor.hp > 0) {
                     if (
-                      neighbor.label.includes("聖職") ||
-                      neighbor.label.includes("牧師")
+                      neighbor.label.includes("牧師") ||
+                      neighbor.label.includes("大賢者")
                     ) {
                       hasDefenderNearby = true;
                     }
-                    if (neighbor.label.includes("守護者")) {
+                    if (
+                      neighbor.label.includes("守護者") ||
+                      neighbor.label.includes("聖堂武士")
+                    ) {
                       isAuraActive = true;
                     }
                   }
                 }
               }
-              if (hasDefenderNearby) baseDef += 4;
-              if (isAuraActive) baseDef += 6; // 守護者的大地守護：周圍 8 格友方獲得額外護甲防禦
+              if (hasDefenderNearby) baseDef += 4; // 牧師在身邊 +4 防禦
+              if (isAuraActive) baseDef += 6; // 守護者在身邊 +6 防禦
             }
           }
 
-          // 大地女神之庇護祝福
-          if (
-            activeBlessing === "EARTH" &&
-            targetUnit.faction === FACTIONS.PLAYER
-          ) {
-            if (
-              targetUnit.shape === "square" || // 坦克新幾何為正方形
-              targetUnit.label.includes("聖職") ||
-              targetUnit.label.includes("牧師") ||
-              targetUnit.label.includes("守護")
-            ) {
-              baseDef += 6;
-            }
-          }
-
-          // 進階/獨立角色的天生受傷減免 (price > 0 視為進階或特殊獨立單位)
+          // 2. 祝福天生受傷減免機制 (計算最終防禦)
           let damageMitigation = 1.0;
           if (
             targetUnit.faction === FACTIONS.PLAYER &&
-            (targetUnit.price > 15 ||
-              targetUnit.isAdvanced ||
-              targetUnit.isLegendary)
+            (targetUnit.isAdvanced || targetUnit.isLegendary)
           ) {
-            damageMitigation = 0.85; // 內建 15% 傷害減免
+            damageMitigation = 0.85; // 高階職業自带 15% 天生受傷減免
           }
 
-          // 計算最終傷害
-          const finalDamage = Math.max(
-            1,
-            Math.floor((damage - baseDef) * damageMitigation)
-          );
+          // 3. 套用防禦減傷計算
+          // 使用標準公式防溢出，或原稿直覺公式：(傷害 - 最終防禦)
+          let finalDamage = damage - baseDef;
 
-          // 🧛 魅魔/死靈刺客吸血與劇毒機制
-          if (
-            attacker.faction === FACTIONS.ENEMY &&
-            attacker.enemyType === "succubus"
-          ) {
-            const lifesteal = Math.floor(finalDamage * 0.5);
+          if (damageMitigation < 1.0) {
+            finalDamage = Math.floor(finalDamage * damageMitigation);
+          }
+
+          // 保底傷害為 1
+          finalDamage = Math.max(1, finalDamage);
+
+          // ==========================================
+          // 🔮 4. 萬用核心機制 (護盾、吸血、反傷、死亡收割)
+          // ==========================================
+
+          // 【魔力護盾機制】
+          const hasMagicShield =
+            targetUnit.tags?.includes("魔力護盾") ||
+            targetUnit.label.includes("法師");
+          if (hasMagicShield) {
+            if (
+              targetUnit.shieldHp === undefined ||
+              isNaN(targetUnit.shieldHp)
+            ) {
+              targetUnit.shieldHp =
+                targetUnit.isAdvanced || targetUnit.isLegendary ? 350 : 120;
+            }
+            if (targetUnit.shieldHp > 0) {
+              if (targetUnit.shieldHp >= finalDamage) {
+                targetUnit.shieldHp -= finalDamage;
+                triggerFloatingText(targetCellId, "🔮護盾吸收", "miss");
+                addLog(
+                  `🔮 【${targetUnit.label}】魔力護盾泛起光芒，完全吸收了 ${finalDamage} 點傷害。`
+                );
+                return;
+              } else {
+                finalDamage -= targetUnit.shieldHp;
+                addLog(
+                  `💥 【${targetUnit.label}】的魔力護盾被擊碎！承受溢出的 ${finalDamage} 點傷害。`
+                );
+                targetUnit.shieldHp = 0;
+              }
+            }
+          }
+
+          // 【吸血機制】
+          const hasLifeSteal =
+            attacker.tags?.includes("吸血") ||
+            attacker.label.includes("狂戰士") ||
+            attacker.label.includes("送葬者");
+          if (hasLifeSteal && finalDamage > 0) {
+            const lifesteal = Math.floor(finalDamage * 0.3); // 統一原稿吸血比例
             attacker.hp = Math.min(attacker.maxHp, attacker.hp + lifesteal);
             const attackerCellId = Object.keys(currentBoard).find(
               (key) => currentBoard[key]?.id === attacker.id
@@ -1407,72 +1498,50 @@ function App() {
             if (attackerCellId) {
               triggerFloatingText(
                 attackerCellId,
-                `😈吸血+${lifesteal}`,
+                `🩸吸血+${lifesteal}`,
                 "miss"
-              );
-              addLog(
-                `🔮 【魅魔】發動生命吸取，從【${targetUnit.label}】身上吸回 ${lifesteal} 點生命值。`
               );
             }
           }
 
-          // 🛡️ 黑暗十字軍【荊棘復仇】：近戰反彈 30% 物理傷害
-          if (targetUnit.label.includes("黑暗十字軍") && attacker.range === 1) {
+          // 【反傷聖盾 / 荊棘復仇機制】
+          if (
+            targetUnit.label.includes("黑暗十字軍") ||
+            targetUnit.label.includes("聖堂武士")
+          ) {
             const reflectDmg = Math.floor(finalDamage * 0.3);
             attacker.hp = Math.max(1, attacker.hp - reflectDmg);
             addLog(
-              `▨ 【${targetUnit.label}】發動荊棘復仇！痛楚加倍奉還，反彈了 ${reflectDmg} 點傷害給【${attacker.label}】！`
+              `🛡️ 【${targetUnit.label}】觸發反傷！加倍奉還 ${reflectDmg} 點傷害給【${attacker.label}】！`
             );
           }
 
-          // 👹 巨魔狂暴攻速校正
-          if (
-            targetUnit.faction === FACTIONS.ENEMY &&
-            targetUnit.enemyType === "troll"
-          ) {
-            targetUnit.cd = Math.max(600, targetUnit.cd - 15);
-            addLog(`👹 【${targetUnit.label}】受傷受激狂暴！行動冷卻加快！`);
-          }
-
-          // 扣除生命值並震動
+          // ==========================================
+          // 💥 5. 實質扣血與浮動文字渲染
+          // ==========================================
           targetUnit.hp -= finalDamage;
           triggerCellShake(targetCellId);
 
-          // 戰鬥狀態日誌渲染
           if (isBlocked) {
             triggerFloatingText(targetCellId, `🛡️-${finalDamage}`, "block");
             addLog(
-              `🛡️ 【${targetUnit.label}】完美格擋！硬生生扛下【${attacker.label}】的攻勢，僅受 ${finalDamage} 點刮痧傷害。`
+              `🛡️ 【${targetUnit.label}】完美【格擋】！硬抗攻勢，僅受 ${finalDamage} 點輕微創傷。`
+            );
+          } else if (isSkillAttack) {
+            triggerFloatingText(targetCellId, `💥-${finalDamage}`, "damage");
+            addLog(
+              `💥 【${attacker.label}】釋放技能大招！對【${targetUnit.label}】造成 ${finalDamage} 點毀滅傷害！！`
             );
           } else {
-            const isCrit = attacker.visualState === "crit-hit";
-            const prefix = isCrit ? "💥 " : "";
-
-            if (isCrit) {
-              addLog(
-                `💥 🔥【暴擊】特異點炸裂！【${attacker.label}】重拳出擊，對【${targetUnit.label}】造成 ${finalDamage} 點毀滅傷害！！`
-              );
-            } else {
-              addLog(
-                `⚔️ 【${attacker.label}】一記橫斬，對【${targetUnit.label}】造成 ${finalDamage} 點物理傷害。`
-              );
-            }
-
-            if (
-              finalDamage > 35 ||
-              attacker.visualState === "skill" ||
-              isCrit ||
-              currentTickTime % 600 === 0
-            ) {
-              triggerFloatingText(
-                targetCellId,
-                `${prefix}-${finalDamage}`,
-                "damage"
-              );
-            }
+            triggerFloatingText(targetCellId, `-${finalDamage}`, "damage");
+            addLog(
+              `⚔️ 【${attacker.label}】揮砍出手，對【${targetUnit.label}】造成 ${finalDamage} 點實質創傷。`
+            );
           }
 
-          // 💀 死亡收割管線
+          // ==========================================
+          // 💀 6. 死亡收割管線
+          // ==========================================
           if (targetUnit.hp <= 0) {
             triggerFloatingText(targetCellId, "💀", "damage");
             let deathMessage =
@@ -1487,39 +1556,127 @@ function App() {
           }
         };
 
+        const processedUnitIds = new Set();
+
         // ─── 🏃 網格行動與排兵技能掃描 ───
         for (let r = 0; r < GRID_ROWS; r++) {
           for (let c = 0; c < GRID_COLS; c++) {
             const currentCellId = `cell-${r}-${c}`;
             const unit = nextBoard[currentCellId];
-            if (!unit || unit.hp <= 0 || unit.nextActionTime > currentTickTime)
-              continue;
 
-            // 統計鄰近 8 格隊友數量 (浪人/大劍師判定)
-            let allyCountIn8Cells = 0;
-            for (let dr = -1; dr <= 1; dr++) {
-              for (let dc = -1; dc <= 1; dc++) {
-                if (dr === 0 && dc === 0) continue;
-                const checkCellId = `cell-${r + dr}-${c + dc}`;
-                const neighbor = nextBoard[checkCellId];
-                if (
-                  neighbor &&
-                  neighbor.faction === FACTIONS.PLAYER &&
-                  neighbor.hp > 0
-                ) {
-                  allyCountIn8Cells++;
+            if (!unit || unit.hp <= 0) continue;
+            if (processedUnitIds.has(unit.id)) continue;
+            processedUnitIds.add(unit.id);
+
+            const rawLabelU = unit.label ? String(unit.label) : "";
+            const uKey =
+              unit.blueprintKey ||
+              unit.enemyType ||
+              rawLabelU.replace(/[^\u4e00-\u9fa5+·]/g, "");
+            const uBlueprint =
+              UNIT_BLUEPRINTS[uKey] ||
+              ENEMY_BLUEPRINTS[uKey] ||
+              ENEMY_BLUEPRINTS[uKey.toLowerCase()];
+            let uTags = uBlueprint?.tags || [];
+            if (
+              rawLabelU.includes("牧師") ||
+              rawLabelU.includes("賢者") ||
+              rawLabelU.includes("祭司")
+            )
+              uTags = [...uTags, "補血"];
+
+            // 中毒掉血
+            if (unit.isPoisoned && currentTickTime % 1000 === 0) {
+              if (unit.poisonTicks > 0) {
+                const poisonDmg = Math.max(
+                  8,
+                  Math.floor((unit.maxHp || 400) * 0.05)
+                );
+                unit.hp -= poisonDmg;
+                triggerFloatingText(currentCellId, `-${poisonDmg}☣️`, "damage");
+                unit.poisonTicks--;
+
+                if (unit.hp <= 0) {
+                  triggerFloatingText(currentCellId, "💀", "damage");
+                  addLog(
+                    `☠️ 【劇毒身亡】毒發身亡！【${unit.label}】毒素攻心，痛苦地倒在戰場上……`
+                  );
+                  nextBoard[currentCellId] = null;
+                  continue;
                 }
+              } else {
+                unit.isPoisoned = false;
+              }
+            }
+            // ─── ⛪ 【核心修復】牧師與 CROSS 系列通用被動補血掃描管線 ───
+            if (
+              uTags.includes("補血") &&
+              unit.faction === FACTIONS.PLAYER &&
+              unit.nextActionTime <= currentTickTime
+            ) {
+              let lowestUnitCellId = null;
+              let lowestHpRatio = 1.0;
+
+              // 1. 掃描全戰場，找出目前血量百分比最低的受傷隊友
+              Object.keys(nextBoard).forEach((k) => {
+                const ally = nextBoard[k];
+                if (
+                  ally &&
+                  ally.faction === FACTIONS.PLAYER &&
+                  ally.hp > 0 &&
+                  ally.hp < ally.maxHp
+                ) {
+                  const ratio = ally.hp / ally.maxHp;
+                  if (ratio < lowestHpRatio) {
+                    lowestHpRatio = ratio;
+                    lowestUnitCellId = k;
+                  }
+                }
+              });
+
+              // 2. 如果場上有需要治療的隊友，立刻發動聖光治癒
+              if (lowestUnitCellId) {
+                const targetAlly = nextBoard[lowestUnitCellId];
+
+                // 🚀 治療量完全與牧師自身的基礎攻擊力 (atk) 比例掛鉤，不再吃死板的 80 滴！
+                const healPower = Math.floor(unit.atk * 1.5);
+
+                targetAlly.hp = Math.min(
+                  targetAlly.maxHp,
+                  targetAlly.hp + healPower
+                );
+
+                // 跳出清晰的綠色 +💚 特效字
+                triggerFloatingText(
+                  lowestUnitCellId,
+                  `+${healPower}💚`,
+                  "miss",
+                  "#10b981"
+                );
+
+                addLog(
+                  `💚 【${unit.label}】釋放治癒聖光，為受創的【${targetAlly.label}】灌注春風生命力，療癒 ${healPower} 點生命！</span>`
+                );
+
+                // 🎯 攻速與冷卻咬合防線：補血完後，精確按照牧師藍圖指定的 attackSpeed 進入下一次上膛
+                const actionCooldown = unit.attackSpeed
+                  ? unit.attackSpeed * 1000
+                  : 1200;
+                unit.nextActionTime = currentTickTime + actionCooldown;
+
+                continue; // 成功執行本職工作，直接跳過後面的「索敵去敲怪」邏輯
               }
             }
 
-            let finalCd = unit.cd;
+            if (unit.nextActionTime > currentTickTime) continue;
 
-            // 🤖 機兵動態上膛加壓被動
-            if (unit.label.includes("機兵")) {
+            let finalCd = unit.cd || 1000;
+
+            // 🤖 機兵加壓
+            if (rawLabelU.includes("機兵")) {
               let humanSteamHelper = 0;
               const leftNeighbor = nextBoard[`cell-${r}-${c - 1}`];
               const rightNeighbor = nextBoard[`cell-${r}-${c + 1}`];
-
               if (
                 leftNeighbor &&
                 leftNeighbor.faction === FACTIONS.PLAYER &&
@@ -1534,28 +1691,16 @@ function App() {
                 !rightNeighbor.label.includes("機兵")
               )
                 humanSteamHelper++;
-
               if (humanSteamHelper > 0) {
                 finalCd = Math.max(500, finalCd - humanSteamHelper * 350);
-                if (currentTickTime % 1000 === 0) {
-                  triggerFloatingText(
-                    currentCellId,
-                    `⚙️加壓 -${humanSteamHelper * 350}ms`,
-                    "block"
-                  );
-                  addLog(
-                    `⚙️ 【🤖 機兵】高溫加壓！兩側人類友軍手動協助上膛，CD暴減 ${
-                      humanSteamHelper * 350
-                    }ms！`
-                  );
-                }
               }
             }
-
-            // ─── 🎯 索敵與距離計算管線 ───
+            // ─── 🎯 穩定版索敵管線（防發呆轉圈修正版） ───
             let targetCellId = null;
             let minDistance = Infinity;
             let targetCoord = null;
+            let actualDistance = Infinity; // 💡 額外紀錄真實物理距離，防止與 BOSS 交互時打架
+
             for (let tr = 0; tr < GRID_ROWS; tr++) {
               for (let tc = 0; tc < GRID_COLS; tc++) {
                 const checkCellId = `cell-${tr}-${tc}`;
@@ -1565,275 +1710,256 @@ function App() {
                   target.faction !== unit.faction &&
                   target.hp > 0
                 ) {
+                  // 計算標準曼哈頓格子距離
                   let dist = Math.abs(c - tc) + Math.abs(r - tr);
-                  if (target.isBoss) {
-                    dist = Math.max(1, dist - 1); // 巨獸引力補丁
-                  }
+                  let realDist = dist; // 保留真實距離
+
+                  // 如果是大型魔王，索敵時縮短判定距離
+                  if (target.isBoss) dist = Math.max(1, dist - 1);
+
                   if (dist < minDistance) {
                     minDistance = dist;
+                    actualDistance = realDist; // 同步鎖定真實距離
                     targetCellId = checkCellId;
                     targetCoord = { r: tr, c: tc };
                   }
                 }
               }
             }
-            if (!targetCellId || !targetCoord) continue;
 
-            // ─── ⚔️ 攻擊範圍與技能判定點 ───
-            if (minDistance <= unit.range) {
+            // 🛑 【防呆第一道防線】如果戰場上完全沒有任何活著的敵方目標，直接原地待命
+            if (!targetCellId || !targetCoord) {
+              unit.visualState = "idle";
+              unit.nextActionTime = currentTickTime + 500; // 0.5秒後再重新索敵
+              continue;
+            }
+
+            // 🎯 【防呆第二道防線】修正與攻擊判定咬合的最小距離
+            // 如果是近戰單位（range=1）面對 BOSS，但真實距離大於 1，強行將 minDistance 校正回真實距離，逼牠走路貼臉！
+            if ((unit.range || 1) === 1 && actualDistance > 1) {
+              minDistance = actualDistance;
+            }
+
+            // ─── ⚔️ 主動攻擊與技能大招結算判定 ───
+            const currentRange = unit.range || 1;
+            if (minDistance <= currentRange) {
               const target = nextBoard[targetCellId];
+              let finalAtk = unit.atk || 40;
 
-              // 祝福多重連擊疊加
-              const requiredSkills = activeBlessing === "VOID" ? 2 : 3;
-              let hitCount = 1;
-              if (
-                activeBlessing === "STORM" &&
-                unit.faction === FACTIONS.PLAYER &&
-                Math.random() * 100 < 15
-              ) {
-                hitCount = 2;
-                triggerFloatingText(currentCellId, "⚡ 風暴雙擊！", "miss");
-              }
-              unit.skillCount += hitCount;
+              // 1. 🔍 大招釋放條件：初始化計數器，每攻擊 3 次，第 4 次就是大招
+              if (unit.skillCount === undefined) unit.skillCount = 0;
+              const isCastingSkill = unit.skillCount >= 3;
 
-              // 🪓 基礎戰士瀕死【復甦之風】護航被動
-              if (
-                unit.label.includes("戰士") &&
-                unit.faction === FACTIONS.PLAYER &&
-                !unit.isHealingActive &&
-                !unit.hasHealedThisGame
-              ) {
-                const triggerThreshold = unit.label.includes("+") ? 0.4 : 0.3;
-                if (unit.hp / unit.maxHp <= triggerThreshold) {
-                  unit.isHealingActive = true;
-                  unit.hasHealedThisGame = true; // 每場限一次
-                  unit.healTurnsLeft = 5;
-                  const quote = unit.label.includes("+")
-                    ? "「為了榮耀，永不倒下！」"
-                    : "「還沒結束...復甦之風！」";
-                  triggerFloatingText(currentCellId, quote, "miss");
+              if (isCastingSkill) {
+                // 🌟 1. 【通用大招台詞與圖標引爆】
+                if (unit.skillQuote) {
+                  triggerFloatingText(
+                    currentCellId,
+                    `${unit.skillIcon || "🔮"} ${unit.skillQuote}`,
+                    "skill-cast",
+                    unit.skillColor || "#f59e0b"
+                  );
+
+                  // 只要是高級、傳奇兵或特殊標籤，發動施法畫面震動
+                  if (
+                    unit.isBoss ||
+                    (unit.tags &&
+                      (unit.tags.includes("吸血") ||
+                        unit.tags.includes("格擋")))
+                  ) {
+                    triggerCellShake && triggerCellShake(targetCellId);
+                  }
+
                   addLog(
-                    `🟢 【${unit.label}】觸發復甦之風！不屈意志激發，每秒回復最大血量！`
+                    `<span style="color: ${
+                      unit.skillColor || "#f59e0b"
+                    }; font-weight: bold;">【${unit.label}】引爆大招：${
+                      unit.skillQuote
+                    }</span>`
                   );
                 }
-              }
-              if (unit.isHealingActive && unit.healTurnsLeft > 0) {
-                const healPercent = unit.label.includes("+") ? 0.08 : 0.05;
-                const healAmt = Math.floor(unit.maxHp * healPercent);
-                unit.hp = Math.min(unit.maxHp, unit.hp + healAmt);
-                triggerFloatingText(currentCellId, `💚+${healAmt}`, "miss");
-                unit.healTurnsLeft -= 1;
-                if (unit.healTurnsLeft <= 0) unit.isHealingActive = false;
-              }
 
-              let finalAtk = unit.atk;
+                // 🌟 2. 核心大招基礎傷害倍率（基礎 1.5 倍）
+                finalAtk = unit.skillAtk || Math.floor(finalAtk * 1.5);
+                unit.visualState = "crit-hit"; // 標記為大招破壞管線
 
-              // 🌾 浪人【孤狼意境】左右游擊增傷判定
-              if (unit.label.includes("浪人")) {
-                const leftAlly = nextBoard[`cell-${r}-${c - 1}`];
-                const rightAlly = nextBoard[`cell-${r}-${c + 1}`];
-                const hasLeft =
-                  leftAlly &&
-                  leftAlly.faction === FACTIONS.PLAYER &&
-                  leftAlly.hp > 0;
-                const hasRight =
-                  rightAlly &&
-                  rightAlly.faction === FACTIONS.PLAYER &&
-                  rightAlly.hp > 0;
-                if (!hasLeft && !hasRight) {
-                  finalAtk = Math.floor(finalAtk * 1.6); // 攻速與增傷大暴發
-                  if (currentTickTime % 1000 === 0) {
-                    triggerFloatingText(
-                      currentCellId,
-                      "「我一人的戰場...足矣。」",
-                      "miss"
+                // 🌟 3. 【核心標籤（Tags）技能交互管線精確觸發】
+                // 🎯 核心修復：直接拿 unit.tags，如果沒有就給空陣列，徹底甩開 bp 依賴
+                const uTags = unit.tags || [];
+
+                // ☀️ 【補血】/【光明】標籤：發動大招時，如果自身或隊友殘血，觸發治療
+                if (uTags.includes("補血") || uTags.includes("光明")) {
+                  const healPower = Math.floor(unit.atk * 1.8);
+                  unit.hp = Math.min(unit.maxHp, (unit.hp || 0) + healPower);
+                  triggerFloatingText(
+                    currentCellId,
+                    `🟢+${healPower} 治癒`,
+                    "heal",
+                    "#10b981"
+                  );
+                  addLog(
+                    `☀️ 【${unit.label}】聖光發動：實質回復了自身 ${healPower} 點生命值！`
+                  );
+                }
+
+                // 🩸 【吸血】標籤：大招傷害的 50% 實時轉化為自身血量
+                if (uTags.includes("吸血")) {
+                  const siphonAmt = Math.floor(finalAtk * 0.5);
+                  unit.hp = Math.min(unit.maxHp, (unit.hp || 0) + siphonAmt);
+                  triggerFloatingText(
+                    currentCellId,
+                    `🩸+${siphonAmt} 吸血`,
+                    "heal",
+                    "#ef4444"
+                  );
+                  addLog(
+                    `🩸 【${unit.label}】觸發嗜血特性：從目標身上吸取 ${siphonAmt} 點生命！`
+                  );
+                }
+
+                // 🔮 【魔力護盾】標籤：法系職業施法時，大招傷害轉為等量魔法護盾值
+                if (uTags.includes("魔力護盾")) {
+                  const shieldAmt = Math.floor(unit.atk * 2.0);
+                  unit.shield = (unit.shield || 0) + shieldAmt;
+                  triggerFloatingText(
+                    currentCellId,
+                    `🔮+${shieldAmt} 護盾`,
+                    "shield",
+                    "#a855f7"
+                  );
+                  addLog(
+                    `🔮 【${unit.label}】魔力護盾充能：獲得 ${shieldAmt} 點奧術護盾！`
+                  );
+                }
+
+                // ⚡ 【暗】/【毒】標籤（忍者/刺客）：釋放大招瞬間進入幻影狀態，暴增閃避率！
+                if (uTags.includes("暗") || uTags.includes("毒")) {
+                  const baseEva = unit.eva || 0;
+                  unit.eva = baseEva + 60; // 🎯 核心修復：用實體自帶的 eva 進行運算，不找 bp
+
+                  // 1.2秒後恢復原狀
+                  setTimeout(() => {
+                    unit.eva = baseEva;
+                  }, 1200);
+                  addLog(`⚡ 【${unit.label}】融入陰影：閃避率短暫暴增 60%！`);
+                }
+
+                // 🔥 【火】/【電】標籤（龍騎士/機兵/元素使）：大招撕裂目標防線
+                if (uTags.includes("火") || uTags.includes("電")) {
+                  if (target) {
+                    target.def = Math.max(0, (target.def || 0) - 8); // 削弱敵方 8 點護甲
+                    addLog(
+                      `💥 【${unit.label}】元素爆裂：灼燒/破載了敵方防線，削弱 8 點防禦！`
                     );
                   }
                 }
-              }
 
-              // 🏹 弓箭手【百步穿楊】超遠射程狙擊判定
-              if (unit.label.includes("弓箭手") && minDistance >= 4) {
-                const multiplier = unit.label.includes("+") ? 2.5 : 2.0;
-                finalAtk = Math.floor(finalAtk * multiplier);
-                if (unit.label.includes("+")) unit.visualState = "crit-hit"; // 必定暴擊
-                if (currentTickTime % 1000 === 0) {
-                  const quote = unit.label.includes("+")
-                    ? "「百步之外，例無虛發！」"
-                    : "「鎖定目標，穿透！」";
-                  triggerFloatingText(currentCellId, quote, "damage");
+                // 🛡️ 【格擋】標籤（坦克/聖堂武士/守護者）：強行進入完美格擋架勢
+                if (uTags.includes("格擋")) {
+                  unit.isPerfectBlocking = true; // 標記完美格擋，供受擊管線反傷扣減
+                  addLog(
+                    `🛡️ 【${unit.label}】擺出格擋架勢：下一輪受到的物理傷害將大幅減免！`
+                  );
                 }
-              }
 
-              // 🥷 忍者【瞬步背刺】
-              if (unit.label.includes("忍者") && minDistance === 2) {
-                finalAtk = finalAtk * 3.0;
-                unit.visualState = "crit-hit";
-                triggerFloatingText(
-                  currentCellId,
-                  "「忍法·奧義——瞬步絕殺！」",
-                  "miss"
+                // 🌟 4. 執行真實傷害運算
+                internalDamagePipeline(
+                  unit,
+                  target,
+                  finalAtk,
+                  targetCellId,
+                  nextBoard
                 );
-              }
 
-              // ─── 🌌 滿星/進階大招奧義發動管線 ───
-              if (unit.skillCount >= requiredSkills) {
-                unit.skillCount = 0;
-                unit.visualState = "skill";
+                unit.skillCount = 0; // 重置計數
+              } else {
+                // ⚔️ 普通攻擊：套用原稿特殊的職業加成
+                unit.visualState = "normal-attack";
+                unit.skillCount = (unit.skillCount || 0) + 1; // 累積普攻計數
 
-                // 基礎坦克【盾牌猛擊】暈眩
+                // ─── 📐 核心幾何徽記（Shapes）普通攻擊被動技能完全體 ───
+                const uShape = unit.shape ? unit.shape.toLowerCase() : "";
+
+                // 🛡️ 1. 【圓圈（CIRCLE）】：每 3 次普通攻擊，觸發 15% 最大血量護盾
+                if (uShape === "circle" && unit.skillCount % 3 === 0) {
+                  const circleShield = Math.floor(unit.maxHp * 0.15);
+                  unit.shield = (unit.shield || 0) + circleShield;
+                  triggerFloatingText(
+                    currentCellId,
+                    `🛡️+${circleShield}`,
+                    "shield",
+                    "#38bdf8"
+                  );
+                  addLog(
+                    `🛡️ 【${unit.label}】觸發圓圈被動：獲得 ${circleShield} 點鋼鐵防禦護盾！`
+                  );
+                }
+
+                // 🎯 2. 【菱形（DIAMOND）】：每 3 次普通攻擊，觸發 4 倍傷害暴擊
+                if (uShape === "diamond" && unit.skillCount % 3 === 0) {
+                  finalAtk = Math.floor(finalAtk * 4.0);
+                  unit.visualState = "crit-hit";
+                  addLog(
+                    `⚡ 【${unit.label}】觸發菱形被動：抓到致命破綻，平砍爆發 4 倍傷害！`
+                  );
+                }
+
+                // 🪓 3. 【方塊（SQUARE）】：血量低於 20% 時，普通攻擊觸發 15% 甦醒回血
+                if (uShape === "square" && unit.hp / unit.maxHp <= 0.2) {
+                  const squareHeal = Math.floor(unit.maxHp * 0.15);
+                  unit.hp = Math.min(unit.maxHp, (unit.hp || 0) + squareHeal);
+                  triggerFloatingText(
+                    currentCellId,
+                    `+${squareHeal}🟢`,
+                    "heal",
+                    "#10b981"
+                  );
+                  addLog(
+                    `🟢 【${unit.label}】觸發方塊被動：殘血甦醒！緊急回復 ${squareHeal} 點生命值！`
+                  );
+                }
+
+                // 🏹 4. 【上三角（TRIANGLE-UP）】：每 3 次普通攻擊，發動精密狙擊造成 2 倍爆擊傷害
                 if (
-                  unit.shape === "square" &&
-                  !unit.isAdvanced &&
-                  !unit.isBoss
+                  (uShape === "triangle-up" || uShape === "tri_up") &&
+                  unit.skillCount % 3 === 0
                 ) {
-                  const stunChance = unit.label.includes("+") ? 35 : 20;
-                  const stunDuration = unit.label.includes("+") ? 800 : 500;
-                  if (Math.random() * 100 < stunChance) {
-                    target.nextActionTime += stunDuration;
-                    const quote = unit.label.includes("+")
-                      ? "「此路不通！」"
-                      : "「哈！給我站住！」";
-                    triggerFloatingText(currentCellId, quote, "block");
-                    triggerFloatingText(targetCellId, "💫 暈眩!", "damage");
-                  }
-                }
-                // ⚔️ 大劍師【旋風斬】
-                else if (unit.label.includes("大劍師")) {
-                  triggerFloatingText(
-                    currentCellId,
-                    "「見識風暴的力量吧！旋風斬！」",
-                    "block"
-                  );
-                  Object.keys(nextBoard).forEach((key) => {
-                    const [, , trStr, tcStr] = key.split("-");
-                    const tr = parseInt(trStr),
-                      tc = parseInt(tcStr);
-                    if (Math.abs(tr - r) <= 1 && Math.abs(tc - c) <= 1) {
-                      const tUnit = nextBoard[key];
-                      if (tUnit && tUnit.faction === FACTIONS.ENEMY) {
-                        internalDamagePipeline(
-                          unit,
-                          tUnit,
-                          Math.floor(unit.atk * 1.5),
-                          key,
-                          nextBoard
-                        );
-                      }
-                    }
-                  });
-                }
-                // ☄️ 元素使【天崩地裂】
-                else if (unit.label.includes("元素使")) {
-                  triggerFloatingText(
-                    currentCellId,
-                    "「聆聽末日的宣告——天崩地裂！」",
-                    "damage"
-                  );
-                  target.hp = Math.max(
-                    0,
-                    target.hp - Math.floor(unit.atk * 2.5)
-                  );
-                  target.nextActionTime += 1000; // 暈眩 1 秒
-                  triggerFloatingText(
-                    targetCellId,
-                    "☄️ 隕石衝擊 (暈眩)",
-                    "damage"
+                  finalAtk = Math.floor(finalAtk * 2.0);
+                  unit.visualState = "crit-hit";
+                  addLog(
+                    `🏹 【${unit.label}】觸發上三角被動：精準鎖定，箭矢穿透造成 2 倍傷害！`
                   );
                 }
-                // ☀️ 大賢者【神聖新星】全場爆發
-                else if (unit.label.includes("大賢者")) {
-                  triggerFloatingText(
-                    currentCellId,
-                    "「神聖新星——普照萬物！」",
-                    "block"
-                  );
-                  Object.keys(nextBoard).forEach((key) => {
-                    const ally = nextBoard[key];
-                    if (ally && ally.hp > 0) {
-                      if (ally.faction === FACTIONS.PLAYER) {
-                        ally.hp = Math.min(ally.maxHp, ally.hp + 250);
-                        triggerFloatingText(key, "💚 +250", "miss");
-                      } else {
-                        ally.hp = Math.max(0, ally.hp - 100);
-                        triggerFloatingText(key, "✨ -100", "damage");
-                      }
-                    }
-                  });
-                }
-                // 🧪 基礎法師【能量彈】小範圍範圍傷害
-                else if (
-                  unit.shape === "circle" &&
-                  !unit.isAdvanced &&
-                  !unit.isBoss
+
+                // 🧪 5. 【下三角（TRIANGLE-DOWN）】：每 3 次普通攻擊，將傷害的 30% 實時轉化為奧術魔力護盾
+                if (
+                  (uShape === "triangle-down" || uShape === "tri_down") &&
+                  unit.skillCount % 3 === 0
                 ) {
-                  const quote = unit.label.includes("+")
-                    ? "「感受元素的烈焰！」"
-                    : "「轟炸吧，能量彈！」";
-                  triggerFloatingText(currentCellId, quote, "damage");
-                  finalAtk = Math.floor(finalAtk * 1.2);
-                }
-                // 🛡️ 聖堂武士【反傷聖盾】
-                else if (unit.label.includes("聖堂武士")) {
+                  const mageShield = Math.floor(finalAtk * 0.3);
+                  unit.shield = (unit.shield || 0) + mageShield;
                   triggerFloatingText(
                     currentCellId,
-                    "「正義之盾，堅不可摧！」",
-                    "block"
+                    `🔮+${mageShield}`,
+                    "shield",
+                    "#a855f7"
                   );
-                  unit.blk = 100; // 下一輪必定完美格擋
-                }
-                // ☠️ 送葬者【黃泉引路】
-                else if (
-                  unit.label.includes("送葬者") &&
-                  target.hp / target.maxHp < 0.2 &&
-                  !target.isBoss
-                ) {
-                  triggerFloatingText(
-                    currentCellId,
-                    "「你的陽壽已盡，認命吧。」",
-                    "damage"
+                  addLog(
+                    `🔮 【${unit.label}】觸發下三角被動：奧術共鳴，將普攻能量轉化為 ${mageShield} 點魔力護盾！`
                   );
-                  target.hp = 0; // 秒殺
-                  unit.cd = Math.max(200, unit.cd - 50); // 永久提升攻速
                 }
-              } else {
-                unit.visualState = "attacking";
-              }
 
-              // ─── 🏹 遠程法術/箭矢彈道發射管線 ───
-              if (unit.range > 1) {
-                const projType = unit.shape === "circle" ? "fireball" : "arrow";
-                const pId = `proj-${Date.now()}-${Math.random()}`;
-                const tRow = parseInt(targetCellId.split("-")[1]);
-                const tCol = parseInt(targetCellId.split("-")[2]);
-                const moveX = (tCol - c) * 100;
-                const moveY = (tRow - r) * 100;
+                // ─── 原有的進階/傳奇與距離特技加成防線 ───
+                // 浪人孤狼意境加成
+                if (rawLabelU.includes("浪人")) {
+                  finalAtk = Math.floor(finalAtk * 1.4);
+                }
+                // 弓箭手百步穿楊加成 (原設計：距離 >= 4格再疊加 200% 傷害)
+                if (rawLabelU.includes("弓箭手") && minDistance >= 4) {
+                  finalAtk = Math.floor(finalAtk * 2.0);
+                }
 
-                setProjectiles((prev) => [
-                  ...prev,
-                  { id: pId, r, c, moveX, moveY, type: projType },
-                ]);
-
-                setTimeout(() => {
-                  setProjectiles((prev) => prev.filter((p) => p.id !== pId));
-                  setBoardState((currentBoardState) => {
-                    const latestBoard = cloneBoardState(currentBoardState);
-                    const currentAttacker = latestBoard[currentCellId];
-                    const currentTarget = latestBoard[targetCellId];
-                    if (currentAttacker && currentTarget) {
-                      internalDamagePipeline(
-                        currentAttacker,
-                        currentTarget,
-                        finalAtk,
-                        targetCellId,
-                        latestBoard
-                      );
-                    }
-                    return latestBoard;
-                  });
-                }, 220);
-              } else {
-                // 近戰當場結算傷害
+                // 執行真實傷害運算
                 internalDamagePipeline(
                   unit,
                   target,
@@ -1843,123 +1969,92 @@ function App() {
                 );
               }
 
-              unit.nextActionTime = currentTickTime + finalCd;
-            } else {
-              // ─── 🏃 走位與縱向追擊邏輯 ───
-              const candidates = [
-                { nr: r - 1, nc: c },
-                { nr: r + 1, nc: c },
-                { nr: r, nc: c - 1 },
-                { nr: r, nc: c + 1 },
-              ];
-              let bestCellId = null;
-              let bestDist = Infinity;
+              // ==========================================
+              // 🎯 攻速重置防線：精確套用原稿的「攻速：秒/次」
+              // ==========================================
+              let attackCooldown = unit.attackSpeed
+                ? unit.attackSpeed * 1000
+                : finalCd;
 
-              for (let cand of candidates) {
-                if (
-                  cand.nr >= 0 &&
-                  cand.nr < GRID_ROWS &&
-                  cand.nc >= 0 &&
-                  cand.nc < GRID_COLS
-                ) {
-                  const checkCellId = `cell-${cand.nr}-${cand.nc}`;
-                  if (!nextBoard[checkCellId]) {
-                    if (unit.lastCellId === checkCellId) continue;
-                    const candDist =
-                      Math.abs(targetCoord.r - cand.nr) +
-                      Math.abs(targetCoord.c - cand.nc);
-                    if (candDist < bestDist) {
-                      bestDist = candDist;
-                      bestCellId = checkCellId;
+              // 浪人孤狼意境：攻速提升 60% (CD變為 0.4 倍)
+              if (rawLabelU.includes("浪人")) {
+                attackCooldown = Math.floor(attackCooldown * 0.4);
+              }
+              // 狂暴化怪物攻速校正
+              if (unit.visualState === "enemy-enraged-aura") {
+                attackCooldown = Math.floor(attackCooldown * 0.8);
+              }
+
+              unit.nextActionTime = currentTickTime + attackCooldown;
+              unit.visualState = "idle";
+            } else {
+              // ─── 🏃 【核心修復】雙邊通用・防繞路、防上下橫跳卡死防線 ───
+              const maxRange = unit.range || 1;
+
+              // 🛑 【鐵律一】如果目標明明在射程內，絕對不准進入移動尋路，強行原地解鎖開火！
+              if (minDistance <= maxRange) {
+                // 這裡不寫任何移動代碼，直接打破移動分支，讓迴圈往下流進大招/普通攻擊判定區
+                addLog(
+                  `🎯 【${unit.label}】目標已進入射程 (${minDistance} <= ${maxRange})，定點進入交戰姿態。`
+                );
+              }
+              // 🛑 【鐵律二】目標在射程外，才允許精確計算下一步位移
+              else {
+                const candidates = [
+                  { nr: r - 1, nc: c },
+                  { nr: r + 1, nc: c },
+                  { nr: r, nc: c - 1 },
+                  { nr: r, nc: c + 1 },
+                ];
+
+                let bestCellId = null;
+                let bestDist = Infinity;
+
+                // 翻查上下左右鄰近格子
+                for (let cand of candidates) {
+                  if (
+                    cand.nr >= 0 &&
+                    cand.nc >= 0 &&
+                    cand.nr < GRID_ROWS &&
+                    cand.nc < GRID_COLS
+                  ) {
+                    const checkCellId = `cell-${cand.nr}-${cand.nc}`;
+
+                    // 🎯 只允許尋找「完全真空、沒有人踩在上面」的格子
+                    if (!nextBoard[checkCellId]) {
+                      const candDist =
+                        Math.abs(targetCoord.r - cand.nr) +
+                        Math.abs(targetCoord.c - cand.nc);
+                      if (candDist < bestDist) {
+                        bestDist = candDist;
+                        bestCellId = checkCellId;
+                      }
                     }
                   }
                 }
-              }
 
-              if (bestCellId) {
-                unit.nextActionTime = currentTickTime + unit.cd;
-                unit.visualState = "idle";
-                unit.lastCellId = currentCellId;
+                // 🎯 關鍵攔截：如果發現最優路徑上的格子被隊友卡死，或者根本無路可走（bestCellId 為空）
+                if (!bestCellId) {
+                  unit.visualState = "idle";
+                  unit.nextActionTime = currentTickTime + 400; // 沉穩停頓 0.4 秒，塞車時原地排隊，不准上下瞎繞
+                  continue; // 🚨 強制跳過本輪後續移動，在原地安全等待
+                }
+
+                // 🟢 只有前方格子真空，且成功取得最優路徑時，才執行流暢物理位移
+                const moveCooldown = unit.moveSpeed
+                  ? unit.moveSpeed * 1000
+                  : 1000;
+                unit.nextActionTime = currentTickTime + moveCooldown;
+
                 nextBoard[bestCellId] = unit;
-                nextBoard[currentCellId] = null;
-              } else {
-                unit.lastCellId = null;
-                unit.nextActionTime = currentTickTime + 200;
+                nextBoard[currentCellId] = null; // 抹除舊位置
+                continue; // 移動成功，結束本輪行動 tick
               }
             }
           }
         }
 
-        // ─── 🦑 魔王與全場天災事件時鐘 ───
-        if (currentTickTime > 0 && currentTickTime % 2400 === 0) {
-          const boss = Object.values(nextBoard).find(
-            (u) => u && u.faction === FACTIONS.ENEMY && u.isBoss
-          );
-          if (boss) {
-            if (boss.enemyType === "kraken" || boss.label.includes("卡薩丁")) {
-              addLog(
-                "🌊 【支配者天災】海怪引導『窒息深海』，全場英雄胸口一悶，行動遲緩！"
-              );
-              Object.keys(nextBoard).forEach((key) => {
-                const ally = nextBoard[key];
-                if (ally && ally.faction === FACTIONS.PLAYER) {
-                  ally.cd += 100;
-                  triggerFloatingText(key, "🌊 窒息深海 CD變慢！", "block");
-                }
-              });
-            } else if (
-              boss.enemyType === "balrog" ||
-              boss.label.includes("巴洛格")
-            ) {
-              const randR = Math.floor(Math.random() * GRID_ROWS);
-              const randC = Math.floor(Math.random() * GRID_COLS);
-              const targetKey = `cell-${randR}-${randC}`;
-              triggerCellShake(targetKey);
-              triggerFloatingText(targetKey, "🌋 地獄劫火！", "damage");
-              if (
-                nextBoard[targetKey] &&
-                nextBoard[targetKey].faction === FACTIONS.PLAYER
-              ) {
-                nextBoard[targetKey].hp = Math.max(
-                  1,
-                  nextBoard[targetKey].hp - 25
-                );
-                addLog(
-                  `🔥 【天災誤傷】部隊【${nextBoard[targetKey].label}】遭遇熔岩重創，血量損失 25 點！`
-                );
-              }
-            } else {
-              addLog(
-                "👑 【支配者天災】不朽龍王長嘯咆哮！『👑 龍吼天威』威壓全場！"
-              );
-              Object.keys(nextBoard).forEach((key) => {
-                const ally = nextBoard[key];
-                if (ally && ally.faction === FACTIONS.PLAYER) {
-                  ally.nextActionTime += 600;
-                  triggerFloatingText(key, "💫 龍吼暈眩！", "block");
-                }
-              });
-            }
-          }
-        }
-
-        // 重置動畫狀態
-        Object.keys(nextBoard).forEach((key) => {
-          if (
-            nextBoard[key] &&
-            (nextBoard[key].visualState === "attacking" ||
-              nextBoard[key].visualState === "skill" ||
-              nextBoard[key].visualState === "crit-hit")
-          ) {
-            setTimeout(() => {
-              setBoardState((b) => {
-                if (b[key]) b[key].visualState = "idle";
-                return { ...b };
-              });
-            }, 150);
-          }
-        });
-
+        // 天災更新維持
         return nextBoard;
       });
     }, TICK_RATE);
@@ -2194,13 +2289,34 @@ function App() {
                             }))
                           );
                         }
+
+                        // ─── 🤖 核心修正：發放英雄防線 ───
                         if (scope.gainUnit) {
-                          const bprint = UNIT_BLUEPRINTS[scope.gainUnit];
-                          setBenchUnits((prev) => [
-                            ...prev,
-                            createUnitInstance(bprint, FACTIONS.PLAYER),
-                          ]);
+                          let finalUnitKey = scope.gainUnit;
+
+                          // 💡 跨維度相容：如果隨機事件寫 "STEAM_MECH"，強行扭轉對齊 "MECHANIZED"
+                          if (finalUnitKey === "STEAM_MECH") {
+                            finalUnitKey = "MECHANIZED";
+                          }
+
+                          const bprint = UNIT_BLUEPRINTS[finalUnitKey];
+
+                          if (bprint) {
+                            setBenchUnits((prev) => [
+                              ...prev,
+                              createUnitInstance(bprint, FACTIONS.PLAYER),
+                            ]);
+                            alert(
+                              `🎉 奇遇發放成功：獲得 🤖【${bprint.label}】！`
+                            );
+                          } else {
+                            console.error(
+                              `🚨 無法發放單位，找不到藍圖 Key: ${finalUnitKey}`
+                            );
+                            alert("🚨 系統錯誤：未找到該單位的註冊藍圖！");
+                          }
                         }
+
                         // ─── 🎰 新增擴充奇遇後端數值處理管線 ───
 
                         // 1. 流浪商人的黑吃黑：懲罰黑暗值暴增
@@ -2332,25 +2448,62 @@ function App() {
         />
         <div className="recruitment-footer">
           {Object.entries(UNIT_BLUEPRINTS).map(([key, bp]) => {
-            let finalPrice = bp.price || 0;
-            if (activeBlessing === "FORTUNE" && finalPrice > 0) {
+            if (!bp) return null;
+
+            // 1. 🎯 終極絕對防線：直接鎖死這 5 大獨立傳奇職業的 Key 與 label
+            const isLegendaryUnit =
+              [
+                "DRAGON_KNIGHT",
+                "NINJA",
+                "RONIN",
+                "TEMPLAR",
+                "MECHANIZED",
+              ].includes(key) ||
+              [
+                "DRAGON_KNIGHT",
+                "NINJA",
+                "RONIN",
+                "TEMPLAR",
+                "MECHANIZED",
+              ].includes(key.toUpperCase()) ||
+              ["龍騎士", "忍者", "浪人", "聖堂武士", "機兵"].includes(bp.label);
+
+            // 🔒 強制死鎖：只要【不是】這 5 個傳奇，不論價格是多少，下排商店一律不顯示！
+            if (!isLegendaryUnit) {
+              return null;
+            }
+
+            // 2. 🪙 價格與財富祝福折抵邏輯（如果藍圖漏寫價格，這裡強制兜底傳奇賣 75 積分）
+            let finalPrice =
+              bp.price !== undefined && bp.price > 0 ? bp.price : 75;
+            if (activeBlessing === "FORTUNE") {
               finalPrice = Math.floor(finalPrice * 0.8);
             }
             const isAffordable = score >= finalPrice;
 
+            // 3. 📝 技能敘述文字綁定
             let skillDesc = "基礎特性：無特殊技能";
-            if (bp.shape === "circle")
-              skillDesc = "🛡️ 被動：每 3 次攻擊觸發 15% 最大血量護盾";
-            if (bp.shape === "square")
-              skillDesc = "🪓 被動：血量低於 20% 時觸發 3 回合 15% 甦醒回血";
-            if (bp.shape === "diamond")
-              skillDesc = "🎯 被動：每 3 次攻擊觸發 4 倍傷害暴擊";
-            if (bp.range > 1) skillDesc += " ｜ 🏹 具備遠程施法/射擊能力";
-            if (bp.range === 2 && bp.maxHp > 200)
+            if (key.toUpperCase() === "DRAGON_KNIGHT" || bp.label === "龍騎士")
               skillDesc = "🐉 特色：長槍兩格距離雙主動格槍刺擊與推條破防";
+            else if (key.toUpperCase() === "NINJA" || bp.label === "忍者")
+              skillDesc = "⚡ 忍法奧義：極速出刀施展瞬步絕殺背刺";
+            else if (key.toUpperCase() === "RONIN" || bp.label === "浪人")
+              skillDesc = "❄️ 孤狼意境：周圍無隊友時暴增攻速與閃避率";
+            else if (key.toUpperCase() === "TEMPLAR" || bp.label === "聖堂武士")
+              skillDesc = "✠ 反傷聖盾：每 6 秒獲得護盾，盾碎時反彈大範圍傷害";
+            else if (key.toUpperCase() === "MECHANIZED" || bp.label === "機兵")
+              skillDesc = "⚙️ 過載核心：成功擊殺目標後永久解除限制爆發攻速";
 
-            const tooltipText = `【${bp.label}】\n血量: ${bp.maxHp} ｜ 防禦: ${bp.def} ｜ 攻擊: ${bp.atk}\n射程: ${bp.range} ｜ 攻速冷卻: ${bp.cd}ms ｜ 閃避: ${bp.eva}%\n------------------------\n${skillDesc}`;
+            // 4. 📇 提示文字框 (Tooltip)
+            const tooltipText = `【${bp.label}】\n血量: ${bp.maxHp} ｜ 防禦: ${
+              bp.def || 0
+            } ｜ 攻擊: ${bp.atk}\n攻速: ${
+              bp.attackSpeed || 1.0
+            }秒/次 ｜ 屬性: ${
+              bp.tags?.join("、") || "無"
+            }\n------------------------\n${skillDesc}`;
 
+            // 5. 🎨 精美按鈕 UI
             return (
               <button
                 key={key}
@@ -2360,13 +2513,7 @@ function App() {
                   padding: "8px 10px",
                   background: isAffordable ? "#1e293b" : "#0f172a",
                   color: isAffordable ? "#f8fafc" : "#64748b",
-                  border: `1px solid ${
-                    isAffordable
-                      ? bp.price > 0
-                        ? "#4ade80"
-                        : "#38bdf8"
-                      : "#1e293b"
-                  }`,
+                  border: `1px solid ${isAffordable ? "#4ade80" : "#1e293b"}`,
                   borderRadius: "4px",
                   cursor: isAffordable ? "pointer" : "not-allowed",
                   fontSize: "12px",
@@ -2375,7 +2522,7 @@ function App() {
                   transition: "all 0.15s ease",
                   position: "relative",
                 }}
-                onClick={() => recruitUnit(key)}
+                onClick={() => recruitUnit(key, null)} // 常駐不扣除隨機格子
               >
                 <div>{bp.label}</div>
                 <div
@@ -3004,7 +3151,22 @@ function App() {
 
                   const bp = UNIT_BLUEPRINTS[slot.key];
                   if (!bp) return null;
-                  const isAffordable = score >= (bp.price || 0);
+
+                  // 🎯 核心修復防線：精確同步後台的 0 元流分管線
+                  const isBasicUnit = [
+                    "CIRCLE",
+                    "SQUARE",
+                    "TRI_UP",
+                    "TRI_DOWN",
+                    "DIAMOND",
+                    "CROSS",
+                  ].includes(slot.key);
+
+                  // 如果是基礎兵，售價直接當作 0；如果是其他高級兵，才看藍圖定價
+                  const finalPrice = isBasicUnit ? 0 : bp.price || 0;
+
+                  // 🚨 解鎖關鍵：只要目前積分夠付 finalPrice 就能買。如果是 0 元兵，任何積分都能買！
+                  const isAffordable = score >= finalPrice;
 
                   return (
                     <button
@@ -3015,13 +3177,16 @@ function App() {
                         padding: "10px",
                         background: isAffordable ? "#1e293b" : "#0f172a",
                         color: "#fff",
-                        border: "1px solid #38bdf8",
+                        border: isBasicUnit
+                          ? "1px solid #10b981"
+                          : "1px solid #38bdf8", // 0元兵給綠色邊框提示
                         borderRadius: "6px",
                         cursor: isAffordable ? "pointer" : "not-allowed",
                         display: "flex",
                         flexDirection: "column",
                         minHeight: "115px",
                         textAlign: "left",
+                        opacity: isAffordable ? 1 : 0.4,
                       }}
                     >
                       <div
@@ -3045,13 +3210,13 @@ function App() {
                       <div
                         style={{
                           fontSize: "11px",
-                          color: "#10b981",
+                          color: isBasicUnit ? "#10b981" : "#38bdf8",
                           marginTop: "auto",
                           fontWeight: "bold",
                           alignSelf: "flex-end",
                         }}
                       >
-                        🪙 0 積分
+                        🪙 {finalPrice} 積分
                       </div>
                     </button>
                   );
@@ -3078,95 +3243,151 @@ function App() {
                 }}
               >
                 {Object.entries(UNIT_BLUEPRINTS).map(([key, bp]) => {
-                  // 🎯 核心防線 1：0元基礎幾何兵不顯示（保留你原本的防呆）
-                  if ((bp.price || 0) === 0) return null;
+                  if (!bp) return null;
 
-                  // 🎯 核心防線 2：嚴格過濾！常駐精英支援部隊「只顯示」傳奇獨立兵種
-                  // 物理封鎖：初始基礎兵、Plus強化兵、以及 65 積分的進階轉職職缺
-                  if (
-                    bp.isPlus ||
-                    bp.isAdvanced ||
-                    key.endsWith("_PLUS") ||
+                  // 1. 🎯 傳奇白名單
+                  const isLegendaryUnit =
                     [
-                      "CIRCLE",
-                      "SQUARE",
-                      "TRI_UP",
-                      "TRI_DOWN",
-                      "DIAMOND",
-                      "CROSS",
-                    ].includes(key)
-                  ) {
+                      "DRAGON_KNIGHT",
+                      "NINJA",
+                      "RONIN",
+                      "TEMPLAR",
+                      "MECHANIZED",
+                    ].includes(key) ||
+                    ["DRAGON_KNIGHT", "NINJA", "RONIN", "TEMPLAR"].includes(
+                      key.toUpperCase()
+                    ) ||
+                    ["龍騎士", "忍者", "浪人", "聖堂武士", "機兵"].includes(
+                      bp.label
+                    ) ||
+                    bp.isLegendary === true;
+
+                  if (!isLegendaryUnit) {
                     return null;
                   }
 
-                  let finalPrice = bp.price;
-                  if (activeBlessing === "FORTUNE")
+                  // 2. 🪙 價格與折扣
+                  let finalPrice =
+                    bp.price !== undefined && bp.price > 0 ? bp.price : 75;
+                  if (activeBlessing === "FORTUNE") {
                     finalPrice = Math.floor(finalPrice * 0.8);
+                  }
                   const isAffordable = score >= finalPrice;
 
-                  // 🎯 動態對齊你最新完全體藍圖的傳奇職業 Key 值
-                  let skillDesc = "普通攻擊";
-                  if (key === "DRAGON_KNIGHT")
-                    skillDesc = "🐉 越格槍刺 ｜ 兼具坦度與輸出";
-                  if (key === "NINJA")
-                    skillDesc = "⚡ 250ms攻速 ｜ 45%極限迴避爆擊";
-                  if (key === "RONIN")
-                    skillDesc = "⚔️ 42點純物傷 ｜ 居全職業之冠";
-                  if (key === "TEMPLAR")
-                    skillDesc = "⛪ 聖光盾 ｜ 高格擋中排法系支援";
-                  if (key === "MECHANIZED")
-                    skillDesc =
-                      "🤖 左右每站一名隊友 CD 暴減 350ms ｜ 第3下全隊永久 ATK+6";
+                  // 3. 🎯 【精確技能分流】傳奇職業直接綁定專屬大招，不吃幾何圖形設定！
+                  let skillDesc = "";
+                  const currentKey = key.toUpperCase();
 
+                  if (currentKey === "DRAGON_KNIGHT" || bp.label === "龍騎士") {
+                    skillDesc = "🐉 特色：長槍兩格距離雙主動格槍刺擊與推條破防";
+                  } else if (currentKey === "NINJA" || bp.label === "忍者") {
+                    skillDesc = "⚡ 忍法奧義：極速出刀施展瞬步絕殺背刺";
+                  } else if (currentKey === "RONIN" || bp.label === "浪人") {
+                    skillDesc = "❄️ 孤狼意境：周圍無隊友時暴增攻速與閃避率";
+                  } else if (
+                    currentKey === "TEMPLAR" ||
+                    bp.label === "聖堂武士"
+                  ) {
+                    skillDesc =
+                      "✠ 反傷聖盾：每 6 秒獲得護盾，盾碎時反彈大範圍傷害";
+                  } else if (
+                    currentKey === "MECHANIZED" ||
+                    bp.label === "機兵"
+                  ) {
+                    skillDesc =
+                      "⚙️ 過載核心：成功擊殺目標後永久解除限制爆發攻速";
+                  } else {
+                    // 💡 如果未來有漏網之魚，才走幾何圖形兜底
+                    skillDesc = "基礎特性：無特殊技能";
+                    if (bp.shape === "circle")
+                      skillDesc = "🛡️ 被動：每 3 次攻擊觸發 15% 最大血量護盾";
+                    if (bp.shape === "square")
+                      skillDesc =
+                        "🪓 被動：血量低於 20% 時觸發 3 回合 15% 甦醒回血";
+                    if (bp.shape === "diamond")
+                      skillDesc = "🎯 被動：每 3 次攻擊觸發 4 倍傷害暴擊";
+                    if (bp.range > 1)
+                      skillDesc += " ｜ 🏹 具備遠程施法/射擊能力";
+                  }
+
+                  // 4. 📇 提示文字框
+                  const tooltipText = `【${bp.label}】\n血量: ${
+                    bp.maxHp
+                  } ｜ 防禦: ${bp.def || 0} ｜ 攻擊: ${bp.atk}\n射程: ${
+                    bp.range || 1
+                  } ｜ 攻速: ${
+                    bp.attackSpeed || 1.0
+                  }s\n------------------------\n${skillDesc}`;
+
+                  // 5. 🎨 正面顯字 UI
                   return (
                     <button
                       key={key}
                       disabled={!isAffordable}
-                      onClick={() => recruitUnit(key, null)} // 常駐商品不扣除商店格，傳入 null
+                      title={tooltipText}
                       style={{
-                        padding: "10px",
+                        padding: "8px 10px",
                         background: isAffordable ? "#1e293b" : "#0f172a",
-                        color: isAffordable ? "#fff" : "#64748b",
+                        color: isAffordable ? "#f8fafc" : "#64748b",
                         border: `1px solid ${
                           isAffordable ? "#4ade80" : "#1e293b"
                         }`,
-                        borderRadius: "6px",
+                        borderRadius: "4px",
                         cursor: isAffordable ? "pointer" : "not-allowed",
+                        fontSize: "12px",
+                        fontWeight: "bold",
+                        textAlign: "center",
+                        transition: "all 0.15s ease",
+                        position: "relative",
                         display: "flex",
                         flexDirection: "column",
                         minHeight: "115px",
-                        textAlign: "left",
                       }}
+                      onClick={() => recruitUnit(key, null)}
                     >
-                      <div style={{ fontWeight: "bold", fontSize: "14px" }}>
-                        {bp.label}
-                      </div>
+                      {/* 職稱 */}
                       <div
                         style={{
+                          textAlign: "left",
+                          fontSize: "14px",
+                          color: isAffordable ? "#4ade80" : "#64748b",
+                        }}
+                      >
+                        {bp.label}
+                      </div>
+
+                      {/* 基礎三圍 */}
+                      <div
+                        style={{
+                          textAlign: "left",
                           fontSize: "11px",
-                          color: isAffordable ? "#94a3b8" : "#475569",
+                          color: "#94a3b8",
                           marginTop: "2px",
                         }}
                       >
-                        ❤️{bp.maxHp} ⚔️{bp.atk} 🛡️{bp.def}
+                        ❤️{bp.maxHp} ⚔️{bp.atk} 🛡️{bp.def || 0}
                       </div>
+
+                      {/* 🎯 正確的專屬技能描述 */}
                       <div
                         style={{
                           fontSize: "10px",
-                          color: isAffordable ? "#f59e0b" : "#475569",
-                          marginTop: "4px",
-                          fontStyle: "italic",
-                          lineHeight: "1.2",
+                          color: isAffordable ? "#f59e0b" : "#475569", // 亮橘色高階技能標示
+                          marginTop: "6px",
+                          textAlign: "left",
+                          lineHeight: "1.3",
+                          fontWeight: "normal",
                         }}
                       >
                         {skillDesc}
                       </div>
+
+                      {/* 價格 */}
                       <div
                         style={{
                           fontSize: "11px",
                           color: isAffordable ? "#10b981" : "#64748b",
                           marginTop: "auto",
-                          fontWeight: "bold",
                           alignSelf: "flex-end",
                         }}
                       >

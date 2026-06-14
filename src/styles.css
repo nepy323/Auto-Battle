@@ -248,29 +248,147 @@ h3 {
 /* ===================================================
      🔮 4. 戰鬥實時互動與特效動畫
      =================================================== */
+/* ===================================================
+   ⚔️ 4. 戰鬥實時互動與特效動畫（幾何徽記與標籤完全咬合版）
+   =================================================== */
+
 .action-wrapper {
   transition: transform 0.1s ease-in-out;
 }
-.action-wrapper.attacking {
-  transform: translateY(-12px) scale(1.05);
-  z-index: 10;
+
+/* 🛑 廢除原本死板的螢火蟲往上抖，改用資料屬性與中文標籤精準分流動畫 */
+
+/* 🎯 1. 【菱形 (DIAMOND) / 刺客 / 物理】-> 疾風瞬殺斬 */
+.action-wrapper.attacking:has(.shape-diamond),
+.action-wrapper.attacking:has([label*="忍者"]),
+.action-wrapper.attacking:has([label*="浪人"]) {
+  animation: assassinSlash 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  z-index: 80;
 }
+@keyframes assassinSlash {
+  0% {
+    transform: scale(1) rotate(0deg);
+    filter: brightness(1);
+  }
+  20% {
+    transform: scale(1.2) translateY(5px) rotate(-10deg);
+    filter: brightness(1.5);
+  } /* 蓄力後撤 */
+  40% {
+    transform: scale(1.3) translateY(-25px) rotate(15deg);
+    filter: brightness(2) drop-shadow(0 0 12px #ef4444);
+  } /* 凌空暴刺出擊 */
+  70% {
+    transform: scale(0.9) translateY(-28px);
+  }
+  100% {
+    transform: scale(1) translateY(0) rotate(0deg);
+    filter: brightness(1);
+  }
+}
+
+/* 🏹 2. 【上三角 (TRIANGLE-UP) / 弓箭手】-> 機械拉弓與急遽釋放 */
+.action-wrapper.attacking:has(.shape-triangle-up),
+.action-wrapper.attacking:has([label*="弓手"]),
+.action-wrapper.attacking:has([label*="機兵"]) {
+  animation: archerDraw 0.3s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+  z-index: 60;
+}
+@keyframes archerDraw {
+  0% {
+    transform: scale(1) translateY(0);
+  }
+  30% {
+    transform: scale(0.9) translateY(8px);
+    filter: brightness(1.2);
+  } /* 強烈後座力拉弓蓄勁 */
+  50% {
+    transform: scale(1.1) translateY(-6px);
+  } /* 箭矢離弦的瞬間前衝 */
+  100% {
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* 🔮 3. 【下三角 (TRIANGLE-DOWN) / 法師 / 奧術】-> 冥想共鳴與法陣擴散 */
+.action-wrapper.attacking:has(.shape-triangle-down),
+.action-wrapper.attacking:has([label*="法師"]),
+.action-wrapper.attacking:has([label*="祭司"]) {
+  animation: mageCast 0.4s ease-in-out forwards;
+  z-index: 70;
+}
+@keyframes mageCast {
+  0% {
+    transform: scale(1);
+    filter: brightness(1);
+  }
+  40% {
+    transform: scale(1.25) rotate(-5deg);
+    filter: brightness(1.8) drop-shadow(0 0 15px #a855f7);
+  } /* 奧術能量充盈膨脹 */
+  60% {
+    transform: scale(1.1) rotate(5deg);
+  }
+  100% {
+    transform: scale(1) rotate(0deg);
+    filter: brightness(1);
+  }
+}
+
+/* 🛡️ 4. 【圓圈 (CIRCLE) / 方塊 (SQUARE) / 坦克 / 重甲】-> 盾牌猛擊與撼地撞擊 */
+.action-wrapper.attacking:has(.shape-circle),
+.action-wrapper.attacking:has(.shape-square),
+.action-wrapper.attacking:has([label*="護衛"]),
+.action-wrapper.attacking:has([label*="重甲"]) {
+  animation: shieldBash 0.28s cubic-bezier(0.36, 0.07, 0.19, 0.97) forwards;
+  z-index: 65;
+}
+@keyframes shieldBash {
+  0% {
+    transform: scale(1) translateY(0);
+  }
+  25% {
+    transform: scale(1.05) translateY(4px);
+  } /* 沉穩下蹲沉肩 */
+  45% {
+    transform: scale(1.15) translateY(-16px);
+    filter: contrast(1.4) drop-shadow(0 0 8px #cbd5e1);
+  } /* 迎面重盾猛砸 */
+  100% {
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* 👑 5. 【魔王級 (FINAL-BOSS) / 舊日支配者】-> 虛空黑洞沉降與位能碾壓 */
+.action-wrapper.attacking:has(.final-boss-style) {
+  animation: bossCataclysm 0.45s cubic-bezier(0.19, 1, 0.22, 1) forwards;
+  z-index: 999;
+}
+@keyframes bossCataclysm {
+  0% {
+    transform: scale(1);
+    filter: brightness(1);
+  }
+  30% {
+    transform: scale(0.92) translateY(12px);
+    filter: brightness(0.6);
+  } /* 吸取周圍光芒的暗黑沉降 */
+  55% {
+    transform: scale(1.12) translateY(-30px);
+    filter: brightness(2) drop-shadow(0 0 30px #a855f7);
+  } /* 遮天蔽日的滅世碾壓 */
+  100% {
+    transform: scale(1) translateY(0);
+    filter: brightness(1);
+  }
+}
+
+/* 大招管線維持其高爆發層級 */
 .action-wrapper.skill {
   transform: scale(1.25);
   filter: brightness(1.6);
-  z-index: 50;
+  z-index: 90;
   transition: transform 0.1s ease-out;
-}
-.action-wrapper.crit-hit {
-  animation: critFlash 0.15s ease-out 2;
-}
-@keyframes critFlash {
-  0% {
-    filter: brightness(2) drop-shadow(0 0 15px #ef4444);
-  }
-  100% {
-    filter: brightness(1);
-  }
 }
 
 /* 棋子轉職金色外光暈 */
@@ -316,9 +434,6 @@ h3 {
   }
 }
 
-/* ==========================================
-   ✨ 2D 彈道投射物・頂級特效重構版
-   ========================================== */
 /* ==========================================
    ✨ 2D 彈道投射物・霓虹發光極光版（徹底除髒）
    ========================================== */
@@ -1189,4 +1304,87 @@ button[onClick*="startBattle"],
   100% {
     box-shadow: 0 0 22px #f59e0b, 0 0 5px #fff;
   }
+}
+/* ===================================================
+   🏹 攻擊方向實時霓虹指示器（無實體彈道備援方案）
+   =================================================== */
+.arrow-neon-core {
+  font-size: 24px;
+  color: #ffffff;
+  /* 釋放亮橘色高飽和霓虹發光，與你的 proj-arrow 流光箭風格完美統一 */
+  text-shadow: 0 0 6px #ff7700, 0 0 12px #ff4400, 0 0 20px #ff0000;
+
+  /* 呼叫向前衝刺並淡出的動態時鐘 */
+  animation: arrowShootBurst 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  position: absolute;
+}
+
+@keyframes arrowShootBurst {
+  0% {
+    transform: translateY(10px) scale(0.6); /* 從格子中央偏後方浮現 */
+    opacity: 0;
+    filter: brightness(2);
+  }
+  30% {
+    transform: translateY(-15px) scale(1.2); /* 瞬間對著目標方向凌空突刺衝出 */
+    opacity: 1;
+    filter: brightness(1.5);
+  }
+  100% {
+    transform: translateY(-35px) scale(0.8); /* 衝出格子邊緣後蒸發消失 */
+    opacity: 0;
+    filter: brightness(1);
+  }
+}
+/* ===================================================
+   👿 舊日支配者隨從：深淵暗黑系神話特效
+   =================================================== */
+
+/* 1. 🛡️ 護衛禁軍：鐵血不落（暗紅黑鋼底，帶有沉重的血光外光暈與鋼鐵外框） */
+.unit[label*="護衛禁軍"],
+.unit[label*="禁軍"] {
+  background: linear-gradient(135deg, #1a0505, #260808, #000000) !important;
+  border: 2px dashed #ef4444 !important; /* 殘破鐵血的虛線不詳外框 */
+  box-shadow: 0 0 15px #991b1b, inset 0 0 10px #7f1d1d !important;
+  animation: ironGuardGlow 2s infinite ease-in-out;
+}
+@keyframes ironGuardGlow {
+  0%,
+  100% {
+    filter: drop-shadow(0 0 4px #7f1d1d) brightness(0.9);
+  }
+  50% {
+    filter: drop-shadow(0 0 14px #b91c1c) brightness(1.1);
+    border-color: #b91c1c !important;
+  }
+}
+
+/* 2. 🔮 雷霆祭司：不詳瘋狂（邪靈深紫底，環繞著跳動的暴虐紫電陰影） */
+.unit[label*="雷霆祭司"],
+.unit[label*="祭司"] {
+  background: linear-gradient(135deg, #1e1b4b, #311042, #050505) !important;
+  border: 2px solid #c084fc !important;
+  box-shadow: 0 0 15px #7c3aed, inset 0 0 8px rgba(168, 85, 247, 0.5) !important;
+  animation: cultistThunder 1.2s infinite ease-in-out; /* 頻率拉快，營造瘋狂雷電感 */
+}
+@keyframes cultistThunder {
+  0%,
+  100% {
+    filter: drop-shadow(0 0 3px #a855f7) brightness(1);
+    transform: scale(1);
+  }
+  25% {
+    filter: drop-shadow(0 0 12px #c084fc) brightness(1.3);
+    transform: scale(1.02) translate(0.5px, -0.5px); /* 電擊般的不規則微小震顫 */
+  }
+  75% {
+    filter: drop-shadow(0 0 8px #6366f1) brightness(1.1);
+    transform: scale(0.99) translate(-0.5px, 0.5px);
+  }
+}
+
+/* 🎯 隨從通用：大幅度削減素材的白光亮度，讓他們看起來像是從陰影中爬出來的壞人 */
+.unit[label*="護衛禁軍"] img,
+.unit[label*="雷霆祭司"] img {
+  filter: brightness(0.75) contrast(1.2) drop-shadow(0 0 4px rgba(0, 0, 0, 0.8));
 }
